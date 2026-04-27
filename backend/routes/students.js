@@ -57,5 +57,38 @@ router.delete('/:id', (req, res) => {
   db.prepare('DELETE FROM students WHERE id = ?').run(req.params.id);
   res.json({ success: true });
 });
+// One-time import route
+router.post('/import-all', (req, res) => {
+  const { students } = req.body;
+  if (!students || !Array.isArray(students)) {
+    return res.status(400).json({ error: 'No students data provided' });
+  }
+  
+  const insertStudent = db.prepare(`
+    INSERT OR IGNORE INTO students (name, class, roll_no, phone, email, address, admitted_on)
+    VALUES (?, ?, ?, ?, ?, ?, date('now'))
+  `);
+  const insertFee = db.prepare(`
+    INSERT OR IGNORE INTO fees (student_id, total_fees, paid_amount)
+    VALUES (?, 0, 0)
+  `);
 
+  const importAll = db.transaction(() => {
+    let count = 0;
+    for (const s of students) {
+      const result = insertStudent.run(
+        s.name, s.class, s.roll_no,
+        s.phone || '', s.email || '', s.address || ''
+      );
+      if (result.lastInsertRowid) {
+        insertFee.run(result.lastInsertRowid);
+        count++;
+      }
+    }
+    return count;
+  });
+
+  const count = importAll();
+  res.json({ success: true, imported: count });
+});
 module.exports = router;
