@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { studentsAPI, feesAPI } from './api';
 import IDCardPDF from './IDCardPDF';
+import Results from './Results';
 
 
 // ── Seed Data ──────────────────────────────────────────────────────────────────
@@ -594,6 +595,7 @@ const TABS = [
   { id: "students",  icon: "👨‍🎓", label: "Students" },
   { id: "fees",      icon: "💰", label: "Fees" },
   { id: "idcards",   icon: "🪪", label: "ID Cards" },
+  { id: "results",   icon: "📝", label: "Results" },
 ];
 
 export default function App() {
@@ -621,6 +623,7 @@ useEffect(() => {
     if (tab === "students")  return <Students students={students} setStudents={setStudents} fees={fees} setFees={setFees} />;
     if (tab === "fees")      return <Fees students={students} fees={fees} setFees={setFees} />;
     if (tab === "idcards")   return <IDCards students={students} />;
+    if (tab === "results")   return <Results students={students} />;
   };
 
   return (

@@ -34,6 +34,24 @@ db.exec(`
     paid_on     TEXT,
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS results (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id  INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    exam_type   TEXT DEFAULT 'Annual',
+    session     TEXT DEFAULT '2024-25',
+    hindi       REAL DEFAULT 0,
+    english     REAL DEFAULT 0,
+    maths       REAL DEFAULT 0,
+    science     REAL DEFAULT 0,
+    sst         REAL DEFAULT 0,
+    total       REAL DEFAULT 0,
+    percentage  REAL DEFAULT 0,
+    grade       TEXT DEFAULT 'F',
+    rank        INTEGER DEFAULT 0,
+    status      TEXT DEFAULT 'Fail',
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 console.log('✅ Database connected');
