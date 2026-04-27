@@ -6,7 +6,7 @@ require('dotenv').config();
 const app = express();
 const PORT = 5000;
 
-app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174'] }));
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
