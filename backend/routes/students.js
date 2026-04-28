@@ -79,9 +79,17 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
 });
 
 // DELETE student
+// DELETE student
 router.delete('/:id', async (req, res) => {
   try {
-    await db.execute({ sql: 'DELETE FROM students WHERE id = ?', args: [req.params.id] });
+    await db.execute({ 
+      sql: 'DELETE FROM students WHERE id = ?', 
+      args: [parseInt(req.params.id)] 
+    });
+    await db.execute({
+      sql: 'DELETE FROM fees WHERE student_id = ?',
+      args: [parseInt(req.params.id)]
+    });
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
