@@ -1,11 +1,12 @@
-const Database = require('better-sqlite3');
-const path = require('path');
+const { createClient } = require('@libsql/client');
 
-const db = new Database(path.join(__dirname, 'school.db'));
+const db = createClient({
+  url: process.env.TURSO_DATABASE_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
-// Create tables if they don't exist
-db.exec(`
-  CREATE TABLE IF NOT EXISTS students (
+async function initDB() {
+  await db.execute(`CREATE TABLE IF NOT EXISTS students (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL,
     class       TEXT NOT NULL,
@@ -16,26 +17,26 @@ db.exec(`
     photo_url   TEXT,
     admitted_on TEXT DEFAULT (date('now')),
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+  )`);
 
-  CREATE TABLE IF NOT EXISTS fees (
+  await db.execute(`CREATE TABLE IF NOT EXISTS fees (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id  INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
     total_fees  REAL DEFAULT 0,
     paid_amount REAL DEFAULT 0,
     updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+  )`);
 
-  CREATE TABLE IF NOT EXISTS fee_receipts (
+  await db.execute(`CREATE TABLE IF NOT EXISTS fee_receipts (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id  INTEGER REFERENCES students(id),
     receipt_no  TEXT UNIQUE,
     amount_paid REAL,
     paid_on     TEXT,
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+  )`);
 
-  CREATE TABLE IF NOT EXISTS results (
+  await db.execute(`CREATE TABLE IF NOT EXISTS results (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id  INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
     exam_type   TEXT DEFAULT 'Annual',
@@ -51,8 +52,11 @@ db.exec(`
     rank        INTEGER DEFAULT 0,
     status      TEXT DEFAULT 'Fail',
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-`);
+  )`);
 
-console.log('✅ Database connected');
+  console.log('✅ Turso Database connected and tables ready');
+}
+
+initDB().catch(console.error);
+
 module.exports = db;
