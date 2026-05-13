@@ -27,12 +27,10 @@ router.get('/', async (req, res) => {
 });
 
 // POST add student
-// POST add student
 router.post('/', upload.single('photo'), async (req, res) => {
   const { name, class: cls, roll_no, phone, email, address, admitted_on } = req.body;
   const photo_url = req.file ? `/uploads/${req.file.filename}` : null;
   try {
-    // Check if roll_no already exists
     const existing = await db.execute({
       sql: 'SELECT id FROM students WHERE roll_no = ?',
       args: [roll_no]
@@ -40,17 +38,17 @@ router.post('/', upload.single('photo'), async (req, res) => {
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: 'Roll number already exists!' });
     }
-
     const result = await db.execute({
       sql: `INSERT INTO students (name, class, roll_no, phone, email, address, photo_url, admitted_on)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-args: [name, cls, roll_no, phone || '0000000000', email || '', address || '', photo_url, admitted_on || new Date().toISOString().slice(0,10)]
+      args: [name, cls, roll_no, phone || '0000000000', email || '', address || '', photo_url, admitted_on || new Date().toISOString().slice(0,10)]
     });
+    const newId = Number(result.lastInsertRowid);
     await db.execute({
       sql: 'INSERT INTO fees (student_id) VALUES (?)',
-      args: [result.lastInsertRowid]
+      args: [newId]
     });
-    res.json({ success: true, id: result.lastInsertRowid });
+    res.json({ success: true, id: newId });
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
@@ -64,12 +62,12 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
     if (photo_url) {
       await db.execute({
         sql: `UPDATE students SET name=?, class=?, roll_no=?, phone=?, email=?, address=?, photo_url=? WHERE id=?`,
-        args: [name, cls, roll_no, phone, email, address, photo_url, req.params.id]
+        args: [name, cls, roll_no, phone || '0000000000', email || '', address || '', photo_url, parseInt(req.params.id)]
       });
     } else {
       await db.execute({
         sql: `UPDATE students SET name=?, class=?, roll_no=?, phone=?, email=?, address=? WHERE id=?`,
-        args: [name, cls, roll_no, phone, email, address, req.params.id]
+        args: [name, cls, roll_no, phone || '0000000000', email || '', address || '', parseInt(req.params.id)]
       });
     }
     res.json({ success: true });
@@ -79,16 +77,15 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
 });
 
 // DELETE student
-// DELETE student
 router.delete('/:id', async (req, res) => {
   try {
     await db.execute({ 
-      sql: 'DELETE FROM students WHERE id = ?', 
-      args: [parseInt(req.params.id)] 
-    });
-    await db.execute({
       sql: 'DELETE FROM fees WHERE student_id = ?',
       args: [parseInt(req.params.id)]
+    });
+    await db.execute({ 
+      sql: 'DELETE FROM students WHERE id = ?', 
+      args: [parseInt(req.params.id)] 
     });
     res.json({ success: true });
   } catch (e) {
@@ -105,18 +102,22 @@ router.post('/import-all', async (req, res) => {
   let count = 0;
   for (const s of students) {
     try {
+      const check = await db.execute({
+        sql: 'SELECT id FROM students WHERE roll_no = ?',
+        args: [s.roll_no]
+      });
+      if (check.rows.length > 0) continue;
       const result = await db.execute({
-        sql: `INSERT OR IGNORE INTO students (name, class, roll_no, phone, email, address, admitted_on)
+        sql: `INSERT INTO students (name, class, roll_no, phone, email, address, admitted_on)
               VALUES (?, ?, ?, ?, ?, ?, date('now'))`,
         args: [s.name, s.class, s.roll_no, s.phone || '', s.email || '', s.address || '']
       });
-      if (result.rowsAffected > 0) {
-        await db.execute({
-          sql: 'INSERT OR IGNORE INTO fees (student_id, total_fees, paid_amount) VALUES (?, 0, 0)',
-          args: [result.lastInsertRowid]
-        });
-        count++;
-      }
+      const newId = Number(result.lastInsertRowid);
+      await db.execute({
+        sql: 'INSERT INTO fees (student_id, total_fees, paid_amount) VALUES (?, 0, 0)',
+        args: [newId]
+      });
+      count++;
     } catch (e) { continue; }
   }
   res.json({ success: true, imported: count });
