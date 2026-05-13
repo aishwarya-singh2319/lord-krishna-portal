@@ -44,7 +44,7 @@ router.post('/', upload.single('photo'), async (req, res) => {
     const result = await db.execute({
       sql: `INSERT INTO students (name, class, roll_no, phone, email, address, photo_url, admitted_on)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [name, cls, roll_no, phone || '', email || '', address || '', photo_url, admitted_on]
+args: [name, cls, roll_no, phone || '0000000000', email || '', address || '', photo_url, admitted_on || new Date().toISOString().slice(0,10)]
     });
     await db.execute({
       sql: 'INSERT INTO fees (student_id) VALUES (?)',
