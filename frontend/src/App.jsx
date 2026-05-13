@@ -1,47 +1,16 @@
-
 import { useState, useRef, useEffect } from "react";
 import { studentsAPI, feesAPI } from './api';
 import IDCardPDF from './IDCardPDF';
 import Results from './Results';
 
-
-// ── Seed Data ──────────────────────────────────────────────────────────────────
-const SEED_STUDENTS = [
-  { id: 1, name: "Aarav Sharma",    class: "Class V",   roll: "V-01", phone: "9876543210", email: "parent1@gmail.com", address: "12 MG Road, Ghaziabad", photo: null, admitted: "2023-04-01" },
-  { id: 2, name: "Priya Singh",     class: "Class VII",  roll: "VII-03", phone: "9823456781", email: "parent2@gmail.com", address: "45 Sector 9, Noida",     photo: null, admitted: "2022-04-01" },
-  { id: 3, name: "Rohan Gupta",     class: "Class X",   roll: "X-07",  phone: "9812345678", email: "parent3@gmail.com", address: "78 Civil Lines, Delhi",    photo: null, admitted: "2021-04-01" },
-  { id: 4, name: "Sneha Verma",     class: "Nursery",   roll: "N-02",  phone: "9887654321", email: "parent4@gmail.com", address: "22 Raj Nagar, Ghaziabad",  photo: null, admitted: "2024-04-01" },
-  { id: 5, name: "Kabir Patel",     class: "Class III", roll: "III-05",phone: "9934567890", email: "parent5@gmail.com", address: "56 Vaishali, Ghaziabad",   photo: null, admitted: "2023-04-01" },
-];
-
-const SEED_FEES = {
-  1: { total: 45000, paid: 45000 },
-  2: { total: 52000, paid: 30000 },
-  3: { total: 60000, paid: 60000 },
-  4: { total: 38000, paid: 10000 },
-  5: { total: 42000, paid: 42000 },
-};
-
 const CLASSES = ["Pre-Nursery","Nursery","KG","Class I","Class II","Class III","Class IV","Class V","Class VI","Class VII","Class VIII","Class IX","Class X"];
 
-// ── Palette (matches school branding) ─────────────────────────────────────────
 const C = {
-  navy:   "#1e3a8a",
-  navyD:  "#172554",
-  gold:   "#d97706",
-  goldL:  "#fef3c7",
-  white:  "#ffffff",
-  bg:     "#f0f4ff",
-  card:   "#ffffff",
-  text:   "#0f172a",
-  muted:  "#64748b",
-  green:  "#16a34a",
-  red:    "#dc2626",
-  border: "#e2e8f0",
+  navy:"#1e3a8a", navyD:"#172554", gold:"#d97706", goldL:"#fef3c7",
+  white:"#ffffff", bg:"#f0f4ff", card:"#ffffff", text:"#0f172a",
+  muted:"#64748b", green:"#16a34a", red:"#dc2626", border:"#e2e8f0",
 };
 
-// ── Tiny helpers ───────────────────────────────────────────────────────────────
-const uid = () => Date.now() + Math.random();
 const fmt = (n) => "₹" + Number(n).toLocaleString("en-IN");
 
 function Avatar({ name, photo, size = 40 }) {
@@ -89,7 +58,7 @@ function Btn({ children, variant = "primary", onClick, style = {}, small }) {
     primary: { background: C.navy, color: C.white },
     gold:    { background: C.gold, color: C.white },
     outline: { background: "transparent", color: C.navy, border: `1.5px solid ${C.navy}` },
-    danger:  { background: C.red,  color: C.white },
+    danger:  { background: C.red, color: C.white },
     green:   { background: C.green, color: C.white },
   };
   return (
@@ -99,7 +68,6 @@ function Btn({ children, variant = "primary", onClick, style = {}, small }) {
   );
 }
 
-// ── Modal ──────────────────────────────────────────────────────────────────────
 function Modal({ title, onClose, children }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,.55)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
@@ -114,19 +82,18 @@ function Modal({ title, onClose, children }) {
   );
 }
 
-// ── Dashboard ──────────────────────────────────────────────────────────────────
 function Dashboard({ students, fees }) {
   const totalStudents = students.length;
   const totalFees = Object.values(fees).reduce((s, f) => s + f.total, 0);
-  const paidFees   = Object.values(fees).reduce((s, f) => s + f.paid,  0);
-  const dueFees    = totalFees - paidFees;
-  const pending    = students.filter(s => (fees[s.id]?.total || 0) - (fees[s.id]?.paid || 0) > 0).length;
+  const paidFees = Object.values(fees).reduce((s, f) => s + f.paid, 0);
+  const dueFees = totalFees - paidFees;
+  const pending = students.filter(s => (fees[s.id]?.total || 0) - (fees[s.id]?.paid || 0) > 0).length;
 
   const stats = [
     { icon: "👨‍🎓", label: "Total Students", value: totalStudents, color: C.navy, sub: "Enrolled" },
-    { icon: "💰", label: "Fees Collected",  value: fmt(paidFees),  color: C.green, sub: "This session" },
-    { icon: "⏳", label: "Pending Fees",    value: fmt(dueFees),   color: C.red,   sub: `${pending} students` },
-    { icon: "📊", label: "Collection Rate", value: Math.round(paidFees / totalFees * 100) + "%", color: C.gold, sub: "Of total fees" },
+    { icon: "💰", label: "Fees Collected", value: fmt(paidFees), color: C.green, sub: "This session" },
+    { icon: "⏳", label: "Pending Fees", value: fmt(dueFees), color: C.red, sub: `${pending} students` },
+    { icon: "📊", label: "Collection Rate", value: totalFees > 0 ? Math.round(paidFees / totalFees * 100) + "%" : "0%", color: C.gold, sub: "Of total fees" },
   ];
 
   return (
@@ -142,12 +109,10 @@ function Dashboard({ students, fees }) {
           </Card>
         ))}
       </div>
-
-      {/* Fee bar */}
       <Card style={{ marginBottom: 24 }}>
         <h3 style={{ fontSize: 16, fontWeight: 700, color: C.navy, marginBottom: 16 }}>Fee Collection Overview</h3>
         <div style={{ background: "#f1f5f9", borderRadius: 8, height: 18, overflow: "hidden", marginBottom: 8 }}>
-          <div style={{ height: "100%", width: `${paidFees / totalFees * 100}%`, background: `linear-gradient(90deg, ${C.navy}, ${C.gold})`, borderRadius: 8, transition: "width .8s" }} />
+          <div style={{ height: "100%", width: `${totalFees > 0 ? paidFees / totalFees * 100 : 0}%`, background: `linear-gradient(90deg, ${C.navy}, ${C.gold})`, borderRadius: 8 }} />
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.muted }}>
           <span>Collected: <b style={{ color: C.green }}>{fmt(paidFees)}</b></span>
@@ -155,8 +120,6 @@ function Dashboard({ students, fees }) {
           <span>Total: <b>{fmt(totalFees)}</b></span>
         </div>
       </Card>
-
-      {/* Class breakdown */}
       <Card>
         <h3 style={{ fontSize: 16, fontWeight: 700, color: C.navy, marginBottom: 16 }}>Students by Class</h3>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
@@ -175,7 +138,6 @@ function Dashboard({ students, fees }) {
   );
 }
 
-// ── Students ───────────────────────────────────────────────────────────────────
 function StudentForm({ initial, onSave, onClose }) {
   const [form, setForm] = useState(initial || { name: "", class: CLASSES[0], roll: "", phone: "", email: "", address: "", photo: null, admitted: new Date().toISOString().slice(0, 10) });
   const fileRef = useRef();
@@ -218,53 +180,68 @@ function StudentForm({ initial, onSave, onClose }) {
 
 function Students({ students, setStudents, fees, setFees }) {
   const [search, setSearch] = useState("");
-  const [modal, setModal] = useState(null); // null | "add" | {student}
+  const [modal, setModal] = useState(null);
   const [confirmDel, setConfirmDel] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const filtered = students.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
     s.class.toLowerCase().includes(search.toLowerCase()) ||
-    s.roll.toLowerCase().includes(search.toLowerCase())
+    (s.roll_no || s.roll || "").toLowerCase().includes(search.toLowerCase())
   );
 
- const handleSave = async (form) => {
-    const data = new FormData();
-    data.append('name', form.name);
-    data.append('class', form.class);
-    data.append('roll_no', form.roll);
-    data.append('phone', form.phone);
-    data.append('email', form.email || '');
-    data.append('address', form.address || '');
-    data.append('admitted_on', form.admitted);
-    if (form.photo && form.photo.startsWith('data:')) {
-      const res = await fetch(form.photo);
-      const blob = await res.blob();
-      data.append('photo', blob, 'photo.jpg');
-    }
-
-    if (modal === "add") {
-      await studentsAPI.create(data);
-    } else {
-      await studentsAPI.update(modal.id, data);
-    }
-
-    // Reload from database
-    const [sRes, fRes] = await Promise.all([
-      studentsAPI.getAll(), feesAPI.getAll()
-    ]);
+  const reloadData = async () => {
+    const [sRes, fRes] = await Promise.all([studentsAPI.getAll(), feesAPI.getAll()]);
     setStudents(sRes.data);
     const feeMap = {};
     fRes.data.forEach(f => {
       feeMap[f.student_id] = { total: f.total_fees, paid: f.paid_amount };
     });
     setFees(feeMap);
-    setModal(null);
   };
 
-  const handleDelete = (id) => {
-    setStudents(prev => prev.filter(s => s.id !== id));
-    setFees(prev => { const n = { ...prev }; delete n[id]; return n; });
-    setConfirmDel(null);
+  const handleSave = async (form) => {
+    setSaving(true);
+    try {
+      const data = new FormData();
+      data.append('name', form.name);
+      data.append('class', form.class);
+      data.append('roll_no', form.roll);
+      data.append('phone', form.phone || '0000000000');
+      data.append('email', form.email || '');
+      data.append('address', form.address || '');
+      data.append('admitted_on', form.admitted || new Date().toISOString().slice(0, 10));
+      if (form.photo && form.photo.startsWith('data:')) {
+        const res = await fetch(form.photo);
+        const blob = await res.blob();
+        data.append('photo', blob, 'photo.jpg');
+      }
+      if (modal === "add") {
+        await studentsAPI.create(data);
+      } else {
+        await studentsAPI.update(modal.id, data);
+      }
+      await reloadData();
+      setModal(null);
+    } catch (e) {
+      alert('Error saving: ' + (e.response?.data?.error || e.message));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    setDeleting(true);
+    try {
+      await studentsAPI.delete(id);
+      await reloadData();
+      setConfirmDel(null);
+    } catch (e) {
+      alert('Error deleting: ' + (e.response?.data?.error || e.message));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -276,25 +253,26 @@ function Students({ students, setStudents, fees, setFees }) {
           <Btn variant="gold" onClick={() => setModal("add")}>➕ Add Student</Btn>
         </div>
       </div>
-
       <div style={{ display: "grid", gap: 12 }}>
         {filtered.map(s => {
           const fee = fees[s.id] || { total: 0, paid: 0 };
           const due = fee.total - fee.paid;
+          const roll = s.roll_no || s.roll || "";
+          const phone = s.phone || "";
           return (
             <Card key={s.id} style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", padding: "16px 20px" }}>
-              <Avatar name={s.name} photo={s.photo} size={48} />
+              <Avatar name={s.name} photo={s.photo_url || s.photo} size={48} />
               <div style={{ flex: 1, minWidth: 160 }}>
                 <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{s.name}</div>
-                <div style={{ fontSize: 13, color: C.muted }}>{s.class} &bull; Roll: {s.roll}</div>
-                <div style={{ fontSize: 12, color: C.muted }}>📞 {s.phone}</div>
+                <div style={{ fontSize: 13, color: C.muted }}>{s.class} &bull; Roll: {roll}</div>
+                <div style={{ fontSize: 12, color: C.muted }}>📞 {phone}</div>
               </div>
               <div style={{ textAlign: "right", minWidth: 120 }}>
                 <Badge label={due > 0 ? "Fee Pending" : "Fees Clear"} color={due > 0 ? "red" : "green"} />
                 {due > 0 && <div style={{ fontSize: 12, color: C.red, marginTop: 4 }}>Due: {fmt(due)}</div>}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <Btn small variant="outline" onClick={() => setModal(s)}>✏️ Edit</Btn>
+                <Btn small variant="outline" onClick={() => setModal({ ...s, roll: s.roll_no || s.roll, admitted: s.admitted_on || s.admitted })}>✏️ Edit</Btn>
                 <Btn small variant="danger" onClick={() => setConfirmDel(s)}>🗑️</Btn>
               </div>
             </Card>
@@ -306,6 +284,7 @@ function Students({ students, setStudents, fees, setFees }) {
       {modal && (
         <Modal title={modal === "add" ? "Add New Student" : `Edit — ${modal.name}`} onClose={() => setModal(null)}>
           <StudentForm initial={modal !== "add" ? modal : null} onSave={handleSave} onClose={() => setModal(null)} />
+          {saving && <div style={{ textAlign: "center", color: C.navy, marginTop: 10 }}>Saving...</div>}
         </Modal>
       )}
 
@@ -314,7 +293,9 @@ function Students({ students, setStudents, fees, setFees }) {
           <p style={{ marginBottom: 20 }}>Delete <b>{confirmDel.name}</b>? This also removes all fee records and cannot be undone.</p>
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
             <Btn variant="outline" onClick={() => setConfirmDel(null)}>Cancel</Btn>
-            <Btn variant="danger" onClick={() => handleDelete(confirmDel.id)}>Yes, Delete</Btn>
+            <Btn variant="danger" onClick={() => handleDelete(confirmDel.id)} style={{ opacity: deleting ? .6 : 1 }}>
+              {deleting ? "Deleting..." : "Yes, Delete"}
+            </Btn>
           </div>
         </Modal>
       )}
@@ -322,13 +303,11 @@ function Students({ students, setStudents, fees, setFees }) {
   );
 }
 
-// ── Fees ───────────────────────────────────────────────────────────────────────
 function FeeReceipt({ student, fee, receipt, onClose }) {
   const due = fee.total - fee.paid;
   return (
     <div>
-      {/* Receipt preview */}
-      <div id="receipt-preview" style={{ border: `2px solid ${C.navy}`, borderRadius: 12, padding: 24, background: C.white }}>
+      <div style={{ border: `2px solid ${C.navy}`, borderRadius: 12, padding: 24, background: C.white }}>
         <div style={{ textAlign: "center", borderBottom: `3px solid ${C.gold}`, paddingBottom: 16, marginBottom: 16 }}>
           <div style={{ fontSize: 28 }}>🏫</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: C.navy }}>Lord Krishna The School</div>
@@ -339,7 +318,7 @@ function FeeReceipt({ student, fee, receipt, onClose }) {
           {[
             ["Receipt No.", receipt.no], ["Date", receipt.date],
             ["Student Name", student.name], ["Class", student.class],
-            ["Roll No.", student.roll], ["Phone", student.phone],
+            ["Roll No.", student.roll_no || student.roll], ["Phone", student.phone],
           ].map(([k, v]) => (
             <div key={k} style={{ display: "flex", gap: 6 }}>
               <span style={{ color: C.muted, minWidth: 100 }}>{k}:</span>
@@ -417,7 +396,6 @@ function Fees({ students, fees, setFees }) {
         <h2 style={{ fontSize: 22, color: C.navy, fontWeight: 700, margin: 0 }}>💰 Fee Management</h2>
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍  Search student" style={{ border: `1.5px solid ${C.border}`, borderRadius: 8, padding: "8px 14px", fontSize: 14, width: 240, fontFamily: "inherit" }} />
       </div>
-
       <div style={{ display: "grid", gap: 12 }}>
         {filtered.map(s => {
           const fee = fees[s.id] || { total: 0, paid: 0 };
@@ -426,10 +404,10 @@ function Fees({ students, fees, setFees }) {
           return (
             <Card key={s.id}>
               <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-                <Avatar name={s.name} photo={s.photo} size={44} />
+                <Avatar name={s.name} photo={s.photo_url || s.photo} size={44} />
                 <div style={{ flex: 1, minWidth: 140 }}>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{s.name}</div>
-                  <div style={{ fontSize: 12, color: C.muted }}>{s.class} · Roll {s.roll}</div>
+                  <div style={{ fontSize: 12, color: C.muted }}>{s.class} · Roll {s.roll_no || s.roll}</div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, auto)", gap: "4px 20px", fontSize: 13 }}>
                   <span style={{ color: C.muted }}>Total</span>
@@ -448,7 +426,7 @@ function Fees({ students, fees, setFees }) {
               {fee.total > 0 && (
                 <div style={{ marginTop: 12 }}>
                   <div style={{ background: "#f1f5f9", borderRadius: 6, height: 8, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${pct}%`, background: pct === 100 ? C.green : `linear-gradient(90deg, ${C.navy}, ${C.gold})`, borderRadius: 6, transition: "width .6s" }} />
+                    <div style={{ height: "100%", width: `${pct}%`, background: pct === 100 ? C.green : `linear-gradient(90deg, ${C.navy}, ${C.gold})`, borderRadius: 6 }} />
                   </div>
                   <div style={{ fontSize: 11, color: C.muted, marginTop: 3, textAlign: "right" }}>{pct}% paid</div>
                 </div>
@@ -457,7 +435,6 @@ function Fees({ students, fees, setFees }) {
           );
         })}
       </div>
-
       {payModal && (
         <Modal title={payModal.setTotal ? `Set Annual Fees — ${payModal.name}` : `Collect Fee — ${payModal.name}`} onClose={() => { setPayModal(null); setPayAmount(""); setTotalInput(""); }}>
           {payModal.setTotal ? (
@@ -484,48 +461,11 @@ function Fees({ students, fees, setFees }) {
           )}
         </Modal>
       )}
-
       {receiptModal && (
         <Modal title="Fee Receipt Generated" onClose={() => setReceiptModal(null)}>
           <FeeReceipt {...receiptModal} onClose={() => setReceiptModal(null)} />
         </Modal>
       )}
-    </div>
-  );
-}
-
-// ── ID Card ────────────────────────────────────────────────────────────────────
-function IDCardPreview({ student }) {
-  return (
-    <div style={{ width: 280, background: C.white, borderRadius: 14, overflow: "hidden", boxShadow: "0 4px 20px rgba(30,58,138,.2)", border: `2px solid ${C.navy}`, fontFamily: "'Segoe UI', sans-serif" }}>
-      {/* Header */}
-      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #2563eb)`, color: C.white, padding: "14px 16px 10px", display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontSize: 32 }}>🏫</span>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 800, lineHeight: 1.2 }}>Lord Krishna The School</div>
-          <div style={{ fontSize: 10, opacity: .85 }}>CBSE Affiliated, Ghaziabad</div>
-        </div>
-      </div>
-      {/* Gold stripe */}
-      <div style={{ height: 5, background: `linear-gradient(90deg, ${C.gold}, #fbbf24)` }} />
-      {/* Body */}
-      <div style={{ padding: "16px 16px 12px", display: "flex", gap: 14, alignItems: "flex-start" }}>
-        <Avatar name={student.name} photo={student.photo} size={72} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, lineHeight: 1.2, marginBottom: 6 }}>{student.name}</div>
-          {[["Class", student.class], ["Roll No.", student.roll], ["Admitted", student.admitted]].map(([k, v]) => (
-            <div key={k} style={{ fontSize: 11, color: C.muted, lineHeight: 1.6 }}><b style={{ color: C.text, minWidth: 58, display: "inline-block" }}>{k}:</b> {v}</div>
-          ))}
-        </div>
-      </div>
-      <div style={{ margin: "0 16px 12px", background: C.bg, borderRadius: 8, padding: "8px 12px", fontSize: 11 }}>
-        <div style={{ color: C.muted }}>Contact: <b style={{ color: C.text }}>{student.phone}</b></div>
-        {student.address && <div style={{ color: C.muted, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>📍 {student.address}</div>}
-      </div>
-      {/* Footer */}
-      <div style={{ background: C.navy, color: C.white, fontSize: 10, textAlign: "center", padding: "7px 12px" }}>
-        If found, please return to school · 8700656652
-      </div>
     </div>
   );
 }
@@ -545,38 +485,20 @@ function IDCards({ students }) {
         <h2 style={{ fontSize: 22, color: C.navy, fontWeight: 700, margin: 0 }}>🪪 ID Card Generator</h2>
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍  Search student" style={{ border: `1.5px solid ${C.border}`, borderRadius: 8, padding: "8px 14px", fontSize: 14, width: 240, fontFamily: "inherit" }} />
       </div>
-
       {selected ? (
         <div>
           <Btn variant="outline" onClick={() => setSelected(null)} style={{ marginBottom: 20 }}>← Back to list</Btn>
-          <div style={{ display: "flex", gap: 32, flexWrap: "wrap", alignItems: "flex-start" }}>
-            <IDCardPreview student={selected} />
-            <div>
-              <h3 style={{ color: C.navy, marginBottom: 12 }}>ID Card for {selected.name}</h3>
-              <p style={{ color: C.muted, fontSize: 14, marginBottom: 20, maxWidth: 320 }}>
-                The preview on the left shows the generated ID card. Use the print button or your browser's print function to download as PDF.
-              </p>
-              <div style={{ display: "grid", gap: 10 }}>
-                <Btn variant="primary" onClick={() => window.print()}>🖨️ Print / Download PDF</Btn>
-                <Btn variant="outline" onClick={() => setSelected(null)}>Generate Another</Btn>
-              </div>
-              <div style={{ marginTop: 20, background: C.goldL, borderRadius: 10, padding: 14, fontSize: 13, color: "#92400e", maxWidth: 320 }}>
-                💡 <b>Tip:</b> In the print dialog, select <i>"Save as PDF"</i> to download. Set margins to <i>None</i> for best result.
-              </div>
-            </div>
-          </div>
+          <IDCardPDF student={selected} onClose={() => setSelected(null)} />
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
           {filtered.map(s => (
-            <Card key={s.id} style={{ cursor: "pointer", transition: "transform .2s, box-shadow .2s" }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(30,58,138,.15)"; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = ""; }}>
+            <Card key={s.id} style={{ cursor: "pointer" }}>
               <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 14 }}>
-                <Avatar name={s.name} photo={s.photo} size={52} />
+                <Avatar name={s.name} photo={s.photo_url || s.photo} size={52} />
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{s.name}</div>
-                  <div style={{ fontSize: 13, color: C.muted }}>{s.class} · {s.roll}</div>
+                  <div style={{ fontSize: 13, color: C.muted }}>{s.class} · {s.roll_no || s.roll}</div>
                 </div>
               </div>
               <Btn variant="primary" style={{ width: "100%", justifyContent: "center" }} onClick={() => setSelected(s)}>🪪 View & Download ID</Btn>
@@ -589,7 +511,6 @@ function IDCards({ students }) {
   );
 }
 
-// ── App Shell ──────────────────────────────────────────────────────────────────
 const TABS = [
   { id: "dashboard", icon: "📊", label: "Dashboard" },
   { id: "students",  icon: "👨‍🎓", label: "Students" },
@@ -601,24 +522,26 @@ const TABS = [
 export default function App() {
   const [tab, setTab] = useState("dashboard");
   const [students, setStudents] = useState([]);
-const [fees, setFees] = useState({});
-const [loading, setLoading] = useState(true);
-
-useEffect(() => {
-  Promise.all([studentsAPI.getAll(), feesAPI.getAll()])
-    .then(([sRes, fRes]) => {
-      setStudents(sRes.data);
-      const feeMap = {};
-      fRes.data.forEach(f => {
-        feeMap[f.student_id] = { total: f.total_fees, paid: f.paid_amount };
-      });
-      setFees(feeMap);
-    })
-    .finally(() => setLoading(false));
-}, []);
+  const [fees, setFees] = useState({});
+  const [loading, setLoading] = useState(true);
   const [sideOpen, setSideOpen] = useState(true);
 
+  useEffect(() => {
+    Promise.all([studentsAPI.getAll(), feesAPI.getAll()])
+      .then(([sRes, fRes]) => {
+        setStudents(sRes.data);
+        const feeMap = {};
+        fRes.data.forEach(f => {
+          feeMap[f.student_id] = { total: f.total_fees, paid: f.paid_amount };
+        });
+        setFees(feeMap);
+      })
+      .catch(e => console.error('Load error:', e))
+      .finally(() => setLoading(false));
+  }, []);
+
   const renderTab = () => {
+    if (loading) return <div style={{ textAlign: "center", padding: 60, color: C.muted, fontSize: 16 }}>⏳ Loading portal data...</div>;
     if (tab === "dashboard") return <Dashboard students={students} fees={fees} />;
     if (tab === "students")  return <Students students={students} setStudents={setStudents} fees={fees} setFees={setFees} />;
     if (tab === "fees")      return <Fees students={students} fees={fees} setFees={setFees} />;
@@ -628,9 +551,7 @@ useEffect(() => {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", background: C.bg }}>
-      {/* Sidebar */}
       <div style={{ width: sideOpen ? 220 : 64, background: C.navy, color: C.white, display: "flex", flexDirection: "column", transition: "width .3s", flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowX: "hidden" }}>
-        {/* Logo */}
         <div style={{ padding: "20px 16px", borderBottom: `1px solid rgba(255,255,255,.1)`, display: "flex", alignItems: "center", gap: 10, minHeight: 80 }}>
           <span style={{ fontSize: 28, flexShrink: 0 }}>🏫</span>
           {sideOpen && <div>
@@ -638,7 +559,6 @@ useEffect(() => {
             <div style={{ fontSize: 10, opacity: .75 }}>School Portal</div>
           </div>}
         </div>
-        {/* Nav */}
         <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 4 }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{ background: tab === t.id ? "rgba(255,255,255,.15)" : "transparent", border: tab === t.id ? `1px solid ${C.gold}` : "1px solid transparent", color: C.white, borderRadius: 10, padding: "11px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, fontSize: 14, fontWeight: tab === t.id ? 700 : 400, textAlign: "left", transition: "all .2s" }}>
@@ -647,15 +567,11 @@ useEffect(() => {
             </button>
           ))}
         </nav>
-        {/* Toggle */}
         <button onClick={() => setSideOpen(o => !o)} style={{ background: "rgba(255,255,255,.08)", border: "none", color: C.white, padding: "12px", cursor: "pointer", fontSize: 16, borderTop: "1px solid rgba(255,255,255,.1)" }}>
           {sideOpen ? "◀ Collapse" : "▶"}
         </button>
       </div>
-
-      {/* Main */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        {/* Topbar */}
         <div style={{ background: C.white, borderBottom: `2px solid ${C.goldL}`, padding: "0 28px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 1px 8px rgba(0,0,0,.06)" }}>
           <div>
             <span style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>Lord Krishna The School</span>
@@ -666,8 +582,6 @@ useEffect(() => {
             <div style={{ width: 36, height: 36, borderRadius: "50%", background: C.navy, color: C.white, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700 }}>A</div>
           </div>
         </div>
-
-        {/* Content */}
         <div style={{ flex: 1, padding: "28px 28px 40px", maxWidth: 1100, width: "100%" }}>
           {renderTab()}
         </div>
