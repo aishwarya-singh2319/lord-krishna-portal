@@ -1,3 +1,5 @@
+import Login from './Login';
+import AdminSettings from './AdminSettings';
 import { useState, useRef, useEffect } from "react";
 import { studentsAPI, feesAPI } from './api';
 import IDCardPDF from './IDCardPDF';
@@ -139,10 +141,10 @@ function Dashboard({ students, fees }) {
 }
 
 function StudentForm({ initial, onSave, onClose }) {
-  const [form, setForm] = useState(initial || { 
-    name: "", class: CLASSES[0], roll: "", phone: "", 
+  const [form, setForm] = useState(initial || {
+    name: "", class: CLASSES[0], roll: "", phone: "",
     father: "", mother: "", aadhar: "", pan_number: "",
-    address: "", photo: null, admitted: new Date().toISOString().slice(0, 10) 
+    address: "", photo: null, admitted: new Date().toISOString().slice(0, 10)
   });
   const fileRef = useRef();
 
@@ -183,7 +185,7 @@ function StudentForm({ initial, onSave, onClose }) {
       </div>
     </div>
   );
-} 
+}
 
 function Students({ students, setStudents, fees, setFees }) {
   const [search, setSearch] = useState("");
@@ -283,15 +285,15 @@ function Students({ students, setStudents, fees, setFees }) {
                 {due > 0 && <div style={{ fontSize: 12, color: C.red, marginTop: 4 }}>Due: {fmt(due)}</div>}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <Btn small variant="outline" onClick={() => setModal({ 
-               ...s, 
-              roll: s.roll_no || s.roll, 
-              admitted: s.admitted_on || s.admitted,
-              father: s.father_name || '',
-              mother: s.mother_name || '',
-              aadhar: s.aadhar_no || '',
-              pan_number: s.pan_number || '',
-              })}>✏️ Edit</Btn> 
+                <Btn small variant="outline" onClick={() => setModal({
+                  ...s,
+                  roll: s.roll_no || s.roll,
+                  admitted: s.admitted_on || s.admitted,
+                  father: s.father_name || '',
+                  mother: s.mother_name || '',
+                  aadhar: s.aadhar_no || '',
+                  pan_number: s.pan_number || '',
+                })}>✏️ Edit</Btn>
                 <Btn small variant="danger" onClick={() => setConfirmDel(s)}>🗑️</Btn>
               </div>
             </Card>
@@ -536,6 +538,7 @@ const TABS = [
   { id: "fees",      icon: "💰", label: "Fees" },
   { id: "idcards",   icon: "🪪", label: "ID Cards" },
   { id: "results",   icon: "📝", label: "Results" },
+  { id: "settings",  icon: "⚙️", label: "Settings", superadminOnly: true },
 ];
 
 export default function App() {
@@ -544,8 +547,28 @@ export default function App() {
   const [fees, setFees] = useState({});
   const [loading, setLoading] = useState(true);
   const [sideOpen, setSideOpen] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("lk_admin_token"));
+  const [role, setRole] = useState(localStorage.getItem("lk_admin_role") || "");
+  const [adminName, setAdminName] = useState(localStorage.getItem("lk_admin_name") || "Admin");
+
+  const isSuperAdmin = role === "superadmin";
+
+  const handleLogin = (userRole, userName) => {
+    setRole(userRole);
+    setAdminName(userName);
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("lk_admin_token");
+    localStorage.removeItem("lk_admin_role");
+    localStorage.removeItem("lk_admin_name");
+    setIsLoggedIn(false);
+    setRole("");
+  };
 
   useEffect(() => {
+    if (!isLoggedIn) return;
     Promise.all([studentsAPI.getAll(), feesAPI.getAll()])
       .then(([sRes, fRes]) => {
         setStudents(sRes.data);
@@ -557,7 +580,11 @@ export default function App() {
       })
       .catch(e => console.error('Load error:', e))
       .finally(() => setLoading(false));
-  }, []);
+  }, [isLoggedIn]);
+
+  if (!isLoggedIn) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   const renderTab = () => {
     if (loading) return <div style={{ textAlign: "center", padding: 60, color: C.muted, fontSize: 16 }}>⏳ Loading portal data...</div>;
@@ -566,10 +593,13 @@ export default function App() {
     if (tab === "fees")      return <Fees students={students} fees={fees} setFees={setFees} />;
     if (tab === "idcards")   return <IDCards students={students} />;
     if (tab === "results")   return <Results students={students} />;
+    if (tab === "settings" && isSuperAdmin) return <AdminSettings adminName={adminName} onLogout={handleLogout} />;
+    return <div style={{ textAlign: "center", padding: 60, color: C.muted }}>⛔ Access Denied</div>;
   };
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", background: C.bg }}>
+      {/* SIDEBAR */}
       <div style={{ width: sideOpen ? 220 : 64, background: C.navy, color: C.white, display: "flex", flexDirection: "column", transition: "width .3s", flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowX: "hidden" }}>
         <div style={{ padding: "20px 16px", borderBottom: `1px solid rgba(255,255,255,.1)`, display: "flex", alignItems: "center", gap: 10, minHeight: 80 }}>
           <span style={{ fontSize: 28, flexShrink: 0 }}>🏫</span>
@@ -579,7 +609,7 @@ export default function App() {
           </div>}
         </div>
         <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 4 }}>
-          {TABS.map(t => (
+          {TABS.filter(t => !t.superadminOnly || isSuperAdmin).map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{ background: tab === t.id ? "rgba(255,255,255,.15)" : "transparent", border: tab === t.id ? `1px solid ${C.gold}` : "1px solid transparent", color: C.white, borderRadius: 10, padding: "11px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, fontSize: 14, fontWeight: tab === t.id ? 700 : 400, textAlign: "left", transition: "all .2s" }}>
               <span style={{ fontSize: 18, flexShrink: 0 }}>{t.icon}</span>
               {sideOpen && <span style={{ whiteSpace: "nowrap" }}>{t.label}</span>}
@@ -590,7 +620,10 @@ export default function App() {
           {sideOpen ? "◀ Collapse" : "▶"}
         </button>
       </div>
+
+      {/* MAIN CONTENT */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        {/* TOPBAR */}
         <div style={{ background: C.white, borderBottom: `2px solid ${C.goldL}`, padding: "0 28px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 1px 8px rgba(0,0,0,.06)" }}>
           <div>
             <span style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>Lord Krishna The School</span>
@@ -598,9 +631,16 @@ export default function App() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Badge label={`${students.length} Students`} color="blue" />
-            <div style={{ width: 36, height: 36, borderRadius: "50%", background: C.navy, color: C.white, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700 }}>A</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.navy }}>{adminName}</div>
+            <div style={{ background: isSuperAdmin ? C.gold : C.navy, color: C.white, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+              {isSuperAdmin ? "👑 Super Admin" : "👤 Sub Admin"}
+            </div>
+            <button onClick={handleLogout} style={{ background: C.red, color: C.white, border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              🚪 Logout
+            </button>
           </div>
         </div>
+
         <div style={{ flex: 1, padding: "28px 28px 40px", maxWidth: 1100, width: "100%" }}>
           {renderTab()}
         </div>
