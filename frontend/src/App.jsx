@@ -141,7 +141,7 @@ function Dashboard({ students, fees }) {
 function StudentForm({ initial, onSave, onClose }) {
   const [form, setForm] = useState(initial || { 
     name: "", class: CLASSES[0], roll: "", phone: "", 
-    father: "", mother: "", aadhar: "", srn: "",
+    father: "", mother: "", aadhar: "", pan_number: "",
     address: "", photo: null, admitted: new Date().toISOString().slice(0, 10) 
   });
   const fileRef = useRef();
@@ -173,7 +173,7 @@ function StudentForm({ initial, onSave, onClose }) {
         <Input label="Father's Name" value={form.father} onChange={e => setForm(f => ({ ...f, father: e.target.value }))} placeholder="Father's full name" />
         <Input label="Mother's Name" value={form.mother} onChange={e => setForm(f => ({ ...f, mother: e.target.value }))} placeholder="Mother's full name" />
         <Input label="Aadhar Number" value={form.aadhar} onChange={e => setForm(f => ({ ...f, aadhar: e.target.value }))} placeholder="XXXX XXXX XXXX" />
-        <Input label="SR Number" value={form.srn} onChange={e => setForm(f => ({ ...f, srn: e.target.value }))} placeholder="Student SR Number" />
+        <Input label="PAN Number" value={form.pan_number} onChange={e => setForm(f => ({ ...f, pan_number: e.target.value }))} placeholder="Student PAN Number" />
         <Input label="Admission Date" type="date" value={form.admitted} onChange={e => setForm(f => ({ ...f, admitted: e.target.value }))} />
       </div>
       <Input label="Address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="House No., Area, City" />
@@ -183,7 +183,7 @@ function StudentForm({ initial, onSave, onClose }) {
       </div>
     </div>
   );
-}
+} 
 
 function Students({ students, setStudents, fees, setFees }) {
   const [search, setSearch] = useState("");
@@ -219,7 +219,7 @@ function Students({ students, setStudents, fees, setFees }) {
       data.append('father_name', form.father || '');
       data.append('mother_name', form.mother || '');
       data.append('aadhar_no', form.aadhar || '');
-      data.append('sr_number', form.srn || '');
+      data.append('pan_number', form.pan_number || '');
       data.append('email', form.email || '');
       data.append('address', form.address || '');
       data.append('admitted_on', form.admitted || new Date().toISOString().slice(0, 10));
@@ -283,7 +283,15 @@ function Students({ students, setStudents, fees, setFees }) {
                 {due > 0 && <div style={{ fontSize: 12, color: C.red, marginTop: 4 }}>Due: {fmt(due)}</div>}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <Btn small variant="outline" onClick={() => setModal({ ...s, roll: s.roll_no || s.roll, admitted: s.admitted_on || s.admitted })}>✏️ Edit</Btn>
+                <Btn small variant="outline" onClick={() => setModal({ 
+               ...s, 
+              roll: s.roll_no || s.roll, 
+              admitted: s.admitted_on || s.admitted,
+              father: s.father_name || '',
+              mother: s.mother_name || '',
+              aadhar: s.aadhar_no || '',
+              pan_number: s.pan_number || '',
+              })}>✏️ Edit</Btn> 
                 <Btn small variant="danger" onClick={() => setConfirmDel(s)}>🗑️</Btn>
               </div>
             </Card>

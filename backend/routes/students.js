@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
 
 // POST add student
 router.post('/', upload.single('photo'), async (req, res) => {
-  const { name, class: cls, roll_no, phone, father_name, mother_name, aadhar_no, sr_number, address, admitted_on } = req.body;
+  const { name, class: cls, roll_no, phone, father_name, mother_name, aadhar_no, pan_number, address, admitted_on } = req.body;
   try {
     const existing = await db.execute({
       sql: 'SELECT id FROM students WHERE roll_no = ?',
@@ -38,7 +38,7 @@ router.post('/', upload.single('photo'), async (req, res) => {
       return res.status(400).json({ error: 'Roll number already exists!' });
     }
     const result = await db.execute({
-      sql: `INSERT INTO students (name, class, roll_no, phone, father_name, mother_name, aadhar_no, sr_number, address, photo_url, admitted_on)
+      sql: `INSERT INTO students (name, class, roll_no, phone, father_name, mother_name, aadhar_no, pan_number, address, photo_url, admitted_on)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         name,
@@ -48,7 +48,7 @@ router.post('/', upload.single('photo'), async (req, res) => {
         father_name || '',
         mother_name || '',
         aadhar_no || '',
-        sr_number || '',
+        pan_number || '',
         address || '',
         null,
         admitted_on || new Date().toISOString().slice(0, 10)
@@ -67,10 +67,10 @@ router.post('/', upload.single('photo'), async (req, res) => {
 
 // PUT update student
 router.put('/:id', upload.single('photo'), async (req, res) => {
-  const { name, class: cls, roll_no, phone, father_name, mother_name, aadhar_no, sr_number, address } = req.body;
+  const { name, class: cls, roll_no, phone, father_name, mother_name, aadhar_no, pan_number, address } = req.body;
   try {
     await db.execute({
-      sql: `UPDATE students SET name=?, class=?, roll_no=?, phone=?, father_name=?, mother_name=?, aadhar_no=?, sr_number=?, address=? WHERE id=?`,
+      sql: `UPDATE students SET name=?, class=?, roll_no=?, phone=?, father_name=?, mother_name=?, aadhar_no=?, pan_number=?, address=? WHERE id=?`,
       args: [
         name,
         cls,
@@ -79,7 +79,7 @@ router.put('/:id', upload.single('photo'), async (req, res) => {
         father_name || '',
         mother_name || '',
         aadhar_no || '',
-        sr_number || '',
+        pan_number || '',
         address || '',
         parseInt(req.params.id)
       ]
