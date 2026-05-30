@@ -17,9 +17,9 @@ app.use('/api/results', require('./routes/results'));
 app.get('/', (req, res) => res.json({ message: 'Lord Krishna School API running ✅' }));
 // Users with roles
 const USERS = [
-  { username: 'lordkrishna', password: 'lkschool2024', role: 'superadmin', name: 'Main Admin' },
-  { username: 'friend1',     password: 'friend1pass',  role: 'subadmin',   name: 'Sub Admin 1' },
-  { username: 'friend2',     password: 'friend2pass',  role: 'subadmin',   name: 'Sub Admin 2' },
+  { username: 'akshchaudhary', password: 'merimummy@2001', role: 'superadmin', name: 'Aksh Chaudhary' },
+  { username: 'manavyadav',     password: 'manav@123',  role: 'subadmin',   name: 'Manav Yadav' },
+  { username: 'teacher1',     password: 'teacher@123',  role: 'subadmin',   name: 'Teacher 1' },
 ];
 
 app.post('/api/login', (req, res) => {
