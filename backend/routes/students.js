@@ -28,8 +28,7 @@ router.get('/', async (req, res) => {
 
 // POST add student
 router.post('/', upload.single('photo'), async (req, res) => {
-  const { name, class: cls, roll_no, phone, email, address, admitted_on } = req.body;
-  const photo_url = req.file ? `/uploads/${req.file.filename}` : null;
+  const { name, class: cls, roll_no, phone, father_name, mother_name, aadhar_no, sr_number, address, admitted_on } = req.body;
   try {
     const existing = await db.execute({
       sql: 'SELECT id FROM students WHERE roll_no = ?',
@@ -39,9 +38,21 @@ router.post('/', upload.single('photo'), async (req, res) => {
       return res.status(400).json({ error: 'Roll number already exists!' });
     }
     const result = await db.execute({
-      sql: `INSERT INTO students (name, class, roll_no, phone, email, address, photo_url, admitted_on)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [name, cls, roll_no, phone || '0000000000', email || '', address || '', photo_url, admitted_on || new Date().toISOString().slice(0,10)]
+      sql: `INSERT INTO students (name, class, roll_no, phone, father_name, mother_name, aadhar_no, sr_number, address, photo_url, admitted_on)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        name,
+        cls,
+        roll_no,
+        phone || '0000000000',
+        father_name || '',
+        mother_name || '',
+        aadhar_no || '',
+        sr_number || '',
+        address || '',
+        null,
+        admitted_on || new Date().toISOString().slice(0, 10)
+      ]
     });
     const newId = Number(result.lastInsertRowid);
     await db.execute({
@@ -56,20 +67,23 @@ router.post('/', upload.single('photo'), async (req, res) => {
 
 // PUT update student
 router.put('/:id', upload.single('photo'), async (req, res) => {
-  const { name, class: cls, roll_no, phone, email, address } = req.body;
-  const photo_url = req.file ? `/uploads/${req.file.filename}` : null;
+  const { name, class: cls, roll_no, phone, father_name, mother_name, aadhar_no, sr_number, address } = req.body;
   try {
-    if (photo_url) {
-      await db.execute({
-        sql: `UPDATE students SET name=?, class=?, roll_no=?, phone=?, email=?, address=?, photo_url=? WHERE id=?`,
-        args: [name, cls, roll_no, phone || '0000000000', email || '', address || '', photo_url, parseInt(req.params.id)]
-      });
-    } else {
-      await db.execute({
-        sql: `UPDATE students SET name=?, class=?, roll_no=?, phone=?, email=?, address=? WHERE id=?`,
-        args: [name, cls, roll_no, phone || '0000000000', email || '', address || '', parseInt(req.params.id)]
-      });
-    }
+    await db.execute({
+      sql: `UPDATE students SET name=?, class=?, roll_no=?, phone=?, father_name=?, mother_name=?, aadhar_no=?, sr_number=?, address=? WHERE id=?`,
+      args: [
+        name,
+        cls,
+        roll_no,
+        phone || '0000000000',
+        father_name || '',
+        mother_name || '',
+        aadhar_no || '',
+        sr_number || '',
+        address || '',
+        parseInt(req.params.id)
+      ]
+    });
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -108,9 +122,9 @@ router.post('/import-all', async (req, res) => {
       });
       if (check.rows.length > 0) continue;
       const result = await db.execute({
-        sql: `INSERT INTO students (name, class, roll_no, phone, email, address, admitted_on)
-              VALUES (?, ?, ?, ?, ?, ?, date('now'))`,
-        args: [s.name, s.class, s.roll_no, s.phone || '', s.email || '', s.address || '']
+        sql: `INSERT INTO students (name, class, roll_no, phone, address, admitted_on)
+              VALUES (?, ?, ?, ?, ?, date('now'))`,
+        args: [s.name, s.class, s.roll_no, s.phone || '', s.address || '']
       });
       const newId = Number(result.lastInsertRowid);
       await db.execute({

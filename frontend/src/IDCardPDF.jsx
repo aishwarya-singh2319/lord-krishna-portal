@@ -44,11 +44,13 @@ function IDCardTemplate({ student }) {
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 8 }}>{student.name}</div>
+          
           {[
             ["Class",    student.class],
-            ["Roll No.", student.roll_no],
+            ["Roll No.", student.roll_no || student.roll],
+            ["Father",   student.father_name || student.father || ""],
             ["Phone",    student.phone],
-          ].map(([k, v]) => (
+            ].map(([k, v]) => (
             <div key={k} style={{ fontSize: 12, color: C.muted, lineHeight: 1.8 }}>
               <b style={{ color: "#0f172a", minWidth: 60, display: "inline-block" }}>{k}:</b> {v}
             </div>

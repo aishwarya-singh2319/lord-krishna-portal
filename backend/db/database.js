@@ -6,18 +6,32 @@ const db = createClient({
 });
 
 async function initDB() {
-  await db.execute(`CREATE TABLE IF NOT EXISTS students (
+await db.execute(`CREATE TABLE IF NOT EXISTS students (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL,
     class       TEXT NOT NULL,
     roll_no     TEXT NOT NULL UNIQUE,
     phone       TEXT NOT NULL,
-    email       TEXT,
+    father_name TEXT,
+    mother_name TEXT,
+    aadhar_no   TEXT,
+    sr_number   TEXT,
     address     TEXT,
     photo_url   TEXT,
     admitted_on TEXT DEFAULT (date('now')),
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
+  // Add new columns to existing table if they don't exist
+  const addCols = [
+    `ALTER TABLE students ADD COLUMN father_name TEXT`,
+    `ALTER TABLE students ADD COLUMN mother_name TEXT`,
+    `ALTER TABLE students ADD COLUMN aadhar_no TEXT`,
+    `ALTER TABLE students ADD COLUMN sr_number TEXT`,
+  ];
+  for (const sql of addCols) {
+    try { await db.execute(sql); } catch (e) { /* column already exists */ }
+  }
 
   await db.execute(`CREATE TABLE IF NOT EXISTS fees (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,

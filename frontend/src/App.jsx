@@ -139,7 +139,11 @@ function Dashboard({ students, fees }) {
 }
 
 function StudentForm({ initial, onSave, onClose }) {
-  const [form, setForm] = useState(initial || { name: "", class: CLASSES[0], roll: "", phone: "", email: "", address: "", photo: null, admitted: new Date().toISOString().slice(0, 10) });
+  const [form, setForm] = useState(initial || { 
+    name: "", class: CLASSES[0], roll: "", phone: "", 
+    father: "", mother: "", aadhar: "", srn: "",
+    address: "", photo: null, admitted: new Date().toISOString().slice(0, 10) 
+  });
   const fileRef = useRef();
 
   const handlePhoto = (e) => {
@@ -162,11 +166,14 @@ function StudentForm({ initial, onSave, onClose }) {
         <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhoto} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Input label="Full Name *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Aarav Sharma" />
+        <Input label="Full Name *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Student Full Name" />
         <Select label="Class *" value={form.class} options={CLASSES} onChange={e => setForm(f => ({ ...f, class: e.target.value }))} />
         <Input label="Roll Number *" value={form.roll} onChange={e => setForm(f => ({ ...f, roll: e.target.value }))} placeholder="V-01" />
         <Input label="Phone *" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="98XXXXXXXX" />
-        <Input label="Email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="parent@gmail.com" />
+        <Input label="Father's Name" value={form.father} onChange={e => setForm(f => ({ ...f, father: e.target.value }))} placeholder="Father's full name" />
+        <Input label="Mother's Name" value={form.mother} onChange={e => setForm(f => ({ ...f, mother: e.target.value }))} placeholder="Mother's full name" />
+        <Input label="Aadhar Number" value={form.aadhar} onChange={e => setForm(f => ({ ...f, aadhar: e.target.value }))} placeholder="XXXX XXXX XXXX" />
+        <Input label="SR Number" value={form.srn} onChange={e => setForm(f => ({ ...f, srn: e.target.value }))} placeholder="Student SR Number" />
         <Input label="Admission Date" type="date" value={form.admitted} onChange={e => setForm(f => ({ ...f, admitted: e.target.value }))} />
       </div>
       <Input label="Address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="House No., Area, City" />
@@ -209,6 +216,10 @@ function Students({ students, setStudents, fees, setFees }) {
       data.append('class', form.class);
       data.append('roll_no', form.roll);
       data.append('phone', form.phone || '0000000000');
+      data.append('father_name', form.father || '');
+      data.append('mother_name', form.mother || '');
+      data.append('aadhar_no', form.aadhar || '');
+      data.append('sr_number', form.srn || '');
       data.append('email', form.email || '');
       data.append('address', form.address || '');
       data.append('admitted_on', form.admitted || new Date().toISOString().slice(0, 10));
