@@ -3,6 +3,8 @@ import { useRef } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
+const BACKEND = "https://lkschool.onrender.com";
+
 const C = {
   navy: "#1e3a8a",
   gold: "#d97706",
@@ -14,7 +16,7 @@ const C = {
 function IDCardTemplate({ student }) {
   return (
     <div id="id-card-template" style={{
-      width: 320,
+      width: 300,
       background: C.white,
       borderRadius: 14,
       overflow: "hidden",
@@ -23,36 +25,35 @@ function IDCardTemplate({ student }) {
     }}>
       {/* Header */}
       <div style={{ background: `linear-gradient(135deg, ${C.navy}, #2563eb)`, color: C.white, padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontSize: 36 }}>🏫</span>
+        <span style={{ fontSize: 30 }}>🏫</span>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 800 }}>Lord Krishna The School</div>
+          <div style={{ fontSize: 13, fontWeight: 800 }}>Lord Krishna The School</div>
           <div style={{ fontSize: 10, opacity: .85 }}>CBSE Affiliated, Ghaziabad, U.P.</div>
         </div>
       </div>
 
       {/* Gold stripe */}
-      <div style={{ height: 6, background: `linear-gradient(90deg, ${C.gold}, #fbbf24)` }} />
+      <div style={{ height: 5, background: `linear-gradient(90deg, ${C.gold}, #fbbf24)` }} />
 
       {/* Body */}
-      <div style={{ padding: "16px", display: "flex", gap: 14, alignItems: "flex-start" }}>
+      <div style={{ padding: "14px", display: "flex", gap: 12, alignItems: "flex-start" }}>
         {/* Photo */}
-        <div style={{ width: 80, height: 80, borderRadius: "50%", background: C.navy, color: C.white, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 700, border: `3px solid ${C.gold}`, flexShrink: 0 }}>
+        <div style={{ width: 72, height: 72, borderRadius: "50%", background: C.navy, color: C.white, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 700, border: `3px solid ${C.gold}`, flexShrink: 0, overflow: "hidden" }}>
           {student.photo_url
-            ? <img src={`http://localhost:5000${student.photo_url}`} alt="" style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover" }} />
+            ? <img src={`${BACKEND}${student.photo_url}`} alt="" style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover" }} />
             : student.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()
           }
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 8 }}>{student.name}</div>
-          
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: C.navy, marginBottom: 6 }}>{student.name}</div>
           {[
-            ["Class",    student.class],
+            ["Class",   student.class],
             ["Roll No.", student.roll_no || student.roll],
-            ["Father",   student.father_name || student.father || ""],
-            ["Phone",    student.phone],
-            ].map(([k, v]) => (
-            <div key={k} style={{ fontSize: 12, color: C.muted, lineHeight: 1.8 }}>
-              <b style={{ color: "#0f172a", minWidth: 60, display: "inline-block" }}>{k}:</b> {v}
+            ["Father",  student.father_name || student.father || "N/A"],
+            ["Phone",   student.phone],
+          ].map(([k, v]) => (
+            <div key={k} style={{ fontSize: 11, color: C.muted, lineHeight: 1.9 }}>
+              <b style={{ color: "#0f172a", minWidth: 55, display: "inline-block" }}>{k}:</b> {v}
             </div>
           ))}
         </div>
@@ -60,7 +61,7 @@ function IDCardTemplate({ student }) {
 
       {/* Address */}
       {student.address && (
-        <div style={{ margin: "0 16px 12px", background: C.bg, borderRadius: 8, padding: "8px 12px", fontSize: 11, color: C.muted }}>
+        <div style={{ margin: "0 14px 10px", background: C.bg, borderRadius: 8, padding: "7px 10px", fontSize: 10, color: C.muted }}>
           📍 {student.address}
         </div>
       )}
@@ -74,18 +75,33 @@ function IDCardTemplate({ student }) {
 }
 
 export default function IDCardPDF({ student, onClose }) {
-  const cardRef = useRef();
   const [downloading, setDownloading] = useState(false);
 
   const downloadPDF = async () => {
     setDownloading(true);
-    const element = document.getElementById("id-card-template");
-    const canvas = await html2canvas(element, { scale: 2 });
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [86, 54] });
-    pdf.addImage(imgData, "PNG", 0, 0, 86, 54);
-    pdf.save(`IDCard_${student.name.replace(/ /g, "_")}.pdf`);
-    setDownloading(false);
+    try {
+      const element = document.getElementById("id-card-template");
+      const canvas = await html2canvas(element, { scale: 3, useCORS: true });
+      const imgData = canvas.toDataURL("image/png");
+
+      // Get actual card dimensions in px and convert to mm
+      const pxToMm = 0.264583;
+      const cardWidthMm  = element.offsetWidth  * pxToMm;
+      const cardHeightMm = element.offsetHeight * pxToMm;
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: [cardWidthMm, cardHeightMm],
+      });
+
+      pdf.addImage(imgData, "PNG", 0, 0, cardWidthMm, cardHeightMm);
+      pdf.save(`IDCard_${student.name.replace(/ /g, "_")}.pdf`);
+    } catch (e) {
+      alert("Error generating PDF: " + e.message);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
