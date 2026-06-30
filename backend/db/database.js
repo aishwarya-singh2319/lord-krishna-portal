@@ -28,6 +28,8 @@ await db.execute(`CREATE TABLE IF NOT EXISTS students (
     `ALTER TABLE students ADD COLUMN mother_name TEXT`,
     `ALTER TABLE students ADD COLUMN aadhar_no TEXT`,
     `ALTER TABLE students ADD COLUMN pan_number TEXT`,
+    `ALTER TABLE students ADD COLUMN dob TEXT`,
+    `ALTER TABLE students ADD COLUMN caste TEXT`,
   ];
   for (const sql of addCols) {
     try { await db.execute(sql); } catch (e) { /* column already exists */ }

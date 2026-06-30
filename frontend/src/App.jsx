@@ -84,7 +84,7 @@ function Modal({ title, onClose, children }) {
   );
 }
 
-function Dashboard({ students, fees }) {
+function Dashboard({ students, fees, onClassClick }) {
   const totalStudents = students.length;
   const totalFees = Object.values(fees).reduce((s, f) => s + f.total, 0);
   const paidFees = Object.values(fees).reduce((s, f) => s + f.paid, 0);
@@ -125,10 +125,12 @@ function Dashboard({ students, fees }) {
       <Card>
         <h3 style={{ fontSize: 16, fontWeight: 700, color: C.navy, marginBottom: 16 }}>Students by Class</h3>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          {[...new Set(students.map(s => s.class))].map(cls => {
+            {[...new Set(students.map(s => s.class))].map(cls => {
             const count = students.filter(s => s.class === cls).length;
             return (
-              <div key={cls} style={{ background: C.bg, borderRadius: 10, padding: "8px 16px", display: "flex", gap: 8, alignItems: "center" }}>
+              <div key={cls} onClick={() => onClassClick(cls)} style={{ background: C.bg, borderRadius: 10, padding: "8px 16px", display: "flex", gap: 8, alignItems: "center", cursor: "pointer", transition: "all 0.2s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#dbeafe"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = C.bg; e.currentTarget.style.transform = "none"; }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: C.navy }}>{cls}</span>
                 <Badge label={count} color="blue" />
               </div>
@@ -547,6 +549,7 @@ export default function App() {
   const [fees, setFees] = useState({});
   const [loading, setLoading] = useState(true);
   const [sideOpen, setSideOpen] = useState(true);
+  const [selectedClass, setSelectedClass] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("lk_admin_token"));
   const [role, setRole] = useState(localStorage.getItem("lk_admin_role") || "");
   const [adminName, setAdminName] = useState(localStorage.getItem("lk_admin_name") || "Admin");
@@ -588,7 +591,8 @@ export default function App() {
 
   const renderTab = () => {
     if (loading) return <div style={{ textAlign: "center", padding: 60, color: C.muted, fontSize: 16 }}>⏳ Loading portal data...</div>;
-    if (tab === "dashboard") return <Dashboard students={students} fees={fees} />;
+    if (tab === "dashboard") return <Dashboard students={students} fees={fees} onClassClick={(cls) => { setSelectedClass(cls); setTab("classview"); }} />;
+    if (tab === "classview") return <ClassView className={selectedClass} students={students} setStudents={setStudents} fees={fees} setFees={setFees} onBack={() => setTab("dashboard")} />;
     if (tab === "students")  return <Students students={students} setStudents={setStudents} fees={fees} setFees={setFees} />;
     if (tab === "fees")      return <Fees students={students} fees={fees} setFees={setFees} />;
     if (tab === "idcards")   return <IDCards students={students} />;
