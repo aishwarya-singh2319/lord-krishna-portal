@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { studentsAPI, feesAPI } from './api';
 import IDCardPDF from './IDCardPDF';
 import Results from './Results';
+import ClassView from './ClassView';
 
 const CLASSES = ["Pre-Nursery","Nursery","KG","Class I","Class II","Class III","Class IV","Class V","Class VI","Class VII","Class VIII","Class IX","Class X"];
 
@@ -146,6 +147,7 @@ function StudentForm({ initial, onSave, onClose }) {
   const [form, setForm] = useState(initial || {
     name: "", class: CLASSES[0], roll: "", phone: "",
     father: "", mother: "", aadhar: "", pan_number: "",
+    dob: "", caste: "General",
     address: "", photo: null, admitted: new Date().toISOString().slice(0, 10)
   });
   const fileRef = useRef();
@@ -178,8 +180,9 @@ function StudentForm({ initial, onSave, onClose }) {
         <Input label="Mother's Name" value={form.mother} onChange={e => setForm(f => ({ ...f, mother: e.target.value }))} placeholder="Mother's full name" />
         <Input label="Aadhar Number" value={form.aadhar} onChange={e => setForm(f => ({ ...f, aadhar: e.target.value }))} placeholder="XXXX XXXX XXXX" />
         <Input label="PAN Number" value={form.pan_number} onChange={e => setForm(f => ({ ...f, pan_number: e.target.value }))} placeholder="Student PAN Number" />
+        <Input label="Date of Birth" type="date" value={form.dob} onChange={e => setForm(f => ({ ...f, dob: e.target.value }))} />
+        <Select label="Caste" value={form.caste} options={["General","OBC","SC","ST","EWS"]} onChange={e => setForm(f => ({ ...f, caste: e.target.value }))} />
         <Input label="Admission Date" type="date" value={form.admitted} onChange={e => setForm(f => ({ ...f, admitted: e.target.value }))} />
-      </div>
       <Input label="Address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="House No., Area, City" />
       <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
         <Btn variant="outline" onClick={onClose}>Cancel</Btn>
@@ -224,6 +227,8 @@ function Students({ students, setStudents, fees, setFees }) {
       data.append('mother_name', form.mother || '');
       data.append('aadhar_no', form.aadhar || '');
       data.append('pan_number', form.pan_number || '');
+      data.append('dob', form.dob || '');
+      data.append('caste', form.caste || '');
       data.append('email', form.email || '');
       data.append('address', form.address || '');
       data.append('admitted_on', form.admitted || new Date().toISOString().slice(0, 10));
@@ -295,6 +300,8 @@ function Students({ students, setStudents, fees, setFees }) {
                   mother: s.mother_name || '',
                   aadhar: s.aadhar_no || '',
                   pan_number: s.pan_number || '',
+                  dob: s.dob || '',
+                  caste: s.caste || 'General',
                 })}>✏️ Edit</Btn>
                 <Btn small variant="danger" onClick={() => setConfirmDel(s)}>🗑️</Btn>
               </div>
