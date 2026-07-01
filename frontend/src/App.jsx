@@ -183,6 +183,7 @@ function StudentForm({ initial, onSave, onClose }) {
         <Input label="Date of Birth" type="date" value={form.dob} onChange={e => setForm(f => ({ ...f, dob: e.target.value }))} />
         <Select label="Caste" value={form.caste} options={["General","OBC","SC","ST","EWS"]} onChange={e => setForm(f => ({ ...f, caste: e.target.value }))} />
         <Input label="Admission Date" type="date" value={form.admitted} onChange={e => setForm(f => ({ ...f, admitted: e.target.value }))} />
+        </div>
       <Input label="Address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="House No., Area, City" />
       <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
         <Btn variant="outline" onClick={onClose}>Cancel</Btn>
