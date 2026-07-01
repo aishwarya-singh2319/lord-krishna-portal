@@ -72,7 +72,7 @@ function Modal({ title, onClose, children }) {
 function StudentEditForm({ initial, onSave, onClose }) {
   const [form, setForm] = useState(initial || {
     name: "", class: CLASSES[0], roll: "", phone: "",
-    father: "", mother: "", aadhar: "", srn: "", dob: "", caste: "General",
+    father: "", mother: "", aadhar: "", pan_number: "", dob: "", caste: "General",
     address: "", photo: null, admitted: new Date().toISOString().slice(0, 10)
   });
 
@@ -93,7 +93,7 @@ function StudentEditForm({ initial, onSave, onClose }) {
         <Input label="Date of Birth" type="date" value={form.dob} onChange={e => setForm(f => ({ ...f, dob: e.target.value }))} />
         <Select label="Caste" value={form.caste} options={CASTE_OPTIONS} onChange={e => setForm(f => ({ ...f, caste: e.target.value }))} />
         <Input label="Aadhar Number" value={form.aadhar} onChange={e => setForm(f => ({ ...f, aadhar: e.target.value }))} placeholder="XXXX XXXX XXXX" />
-        <Input label="PAN Number" value={form.srn} onChange={e => setForm(f => ({ ...f, srn: e.target.value }))} />
+        <Input label="PAN Number" value={form.pan_number} onChange={e => setForm(f => ({ ...f, pan_number: e.target.value }))} />
         <Input label="Admission Date" type="date" value={form.admitted} onChange={e => setForm(f => ({ ...f, admitted: e.target.value }))} />
       </div>
       <Input label="Address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="House No., Area, City" />
@@ -136,7 +136,7 @@ export default function ClassView({ className, students, setStudents, fees, setF
       data.append('father_name', form.father || '');
       data.append('mother_name', form.mother || '');
       data.append('aadhar_no', form.aadhar || '');
-      data.append('sr_number', form.srn || '');
+      data.append('pan_number', form.pan_number || '');
       data.append('dob', form.dob || '');
       data.append('caste', form.caste || '');
       data.append('address', form.address || '');
@@ -202,7 +202,7 @@ export default function ClassView({ className, students, setStudents, fees, setF
                 <Btn small variant="outline" onClick={() => setModal({
                   ...s, roll: s.roll_no, admitted: s.admitted_on,
                   father: s.father_name || '', mother: s.mother_name || '',
-                  aadhar: s.aadhar_no || '', srn: s.sr_number || '',
+                  aadhar: s.aadhar_no || '', pan_number: s.pan_number || '',
                   dob: s.dob || '', caste: s.caste || 'General', photo: s.photo_url,
                 })}>✏️ Edit</Btn>
                 <Btn small variant="danger" onClick={() => setConfirmDel(s)}>🗑️</Btn>
@@ -215,7 +215,7 @@ export default function ClassView({ className, students, setStudents, fees, setF
 
       {modal && (
         <Modal title={modal === "add" ? `Add Student to ${className}` : `Edit — ${modal.name}`} onClose={() => setModal(null)}>
-          <StudentEditForm initial={modal !== "add" ? modal : { class: className, name: "", roll: "", phone: "", father: "", mother: "", aadhar: "", srn: "", dob: "", caste: "General", address: "", photo: null, admitted: new Date().toISOString().slice(0,10) }} onSave={handleSave} onClose={() => setModal(null)} />
+          <StudentEditForm initial={modal !== "add" ? modal : { class: className, name: "", roll: "", phone: "", father: "", mother: "", aadhar: "", pan_number: "", dob: "", caste: "General", address: "", photo: null, admitted: new Date().toISOString().slice(0,10) }} onSave={handleSave} onClose={() => setModal(null)} />
           {saving && <div style={{ textAlign: "center", color: C.navy, marginTop: 10 }}>Saving...</div>}
         </Modal>
       )}
