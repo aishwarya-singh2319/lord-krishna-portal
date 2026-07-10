@@ -18,6 +18,6 @@ export const studentsAPI = {
 export const feesAPI = {
   getAll:     ()              => api.get('/fees'),
   setTotal:   (id, total)     => api.patch(`/fees/${id}/total`, { total_fees: total }),
-  collectFee: (id, amount)    => api.post(`/fees/${id}/pay`, { amount }),
+  collectFee: (studentId, amount, month, fee_type) => api.post(`/fees/${studentId}/pay`, { amount, month, fee_type }),
   getReceipts:(id)            => api.get(`/fees/${id}/receipts`),
 };

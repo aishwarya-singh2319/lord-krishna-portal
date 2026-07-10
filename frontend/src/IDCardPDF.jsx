@@ -16,59 +16,55 @@ const C = {
 function IDCardTemplate({ student }) {
   return (
     <div id="id-card-template" style={{
-      width: 300,
-      background: C.white,
-      borderRadius: 14,
-      overflow: "hidden",
+      width: "55mm", minHeight: "85mm",
+      background: C.white, overflow: "hidden",
       border: `2px solid ${C.navy}`,
       fontFamily: "'Segoe UI', sans-serif",
+      boxSizing: "border-box",
     }}>
       {/* Header */}
-      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #2563eb)`, color: C.white, padding: "14px 16px", display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontSize: 30 }}>🏫</span>
+      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #2563eb)`, color: C.white, padding: "8px 10px", display: "flex", alignItems: "center", gap: 6 }}>
+        <img src="https://i.ibb.co/jk9t2zpw/logo.png" alt="logo" style={{ width: 28, height: 28, borderRadius: 4, objectFit: "contain", background: "white" }} onError={e => e.target.style.display='none'} />
         <div>
-          <div style={{ fontSize: 13, fontWeight: 800 }}>Lord Krishna The School</div>
-          <div style={{ fontSize: 10, opacity: .85 }}>CBSE Affiliated, Ghaziabad, U.P.</div>
+          <div style={{ fontSize: 9, fontWeight: 800, lineHeight: 1.2 }}>Lord Krishna The School</div>
+          <div style={{ fontSize: 7, opacity: .85 }}>MUNSHI HARPAL COLONY</div>
+          <div style={{ fontSize: 7, opacity: .85 }}>SHAHPUR BAMHETA (GZB)</div>
         </div>
       </div>
 
       {/* Gold stripe */}
-      <div style={{ height: 5, background: `linear-gradient(90deg, ${C.gold}, #fbbf24)` }} />
+      <div style={{ height: 4, background: `linear-gradient(90deg, ${C.gold}, #fbbf24)` }} />
 
-      {/* Body */}
-      <div style={{ padding: "14px", display: "flex", gap: 12, alignItems: "flex-start" }}>
-        {/* Photo */}
-        <div style={{ width: 72, height: 72, borderRadius: "50%", background: C.navy, color: C.white, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 700, border: `3px solid ${C.gold}`, flexShrink: 0, overflow: "hidden" }}>
+      {/* Photo */}
+      <div style={{ display: "flex", justifyContent: "center", padding: "8px 0 4px" }}>
+        <div style={{ width: 52, height: 52, borderRadius: "50%", background: C.navy, color: C.white, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, border: `2px solid ${C.gold}` }}>
           {student.photo_url
-            ? <img src={`${BACKEND}${student.photo_url}`} alt="" style={{ width: 72, height: 72, borderRadius: "50%", objectFit: "cover" }} />
-            : student.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()
+            ? <img src={`https://lk-school-backend.onrender.com${student.photo_url}`} alt="" style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover" }} />
+            : (student.name || "?").split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase()
           }
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: C.navy, marginBottom: 6 }}>{student.name}</div>
-          {[
-            ["Class",   student.class],
-            ["Roll No.", student.roll_no || student.roll],
-            ["Father",  student.father_name || student.father || "N/A"],
-            ["Phone",   student.phone],
-          ].map(([k, v]) => (
-            <div key={k} style={{ fontSize: 11, color: C.muted, lineHeight: 1.9 }}>
-              <b style={{ color: "#0f172a", minWidth: 55, display: "inline-block" }}>{k}:</b> {v}
-            </div>
-          ))}
         </div>
       </div>
 
-      {/* Address */}
-      {student.address && (
-        <div style={{ margin: "0 14px 10px", background: C.bg, borderRadius: 8, padding: "7px 10px", fontSize: 10, color: C.muted }}>
-          📍 {student.address}
-        </div>
-      )}
+      {/* Details */}
+      <div style={{ padding: "0 10px 8px" }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: C.navy, textAlign: "center", marginBottom: 6 }}>{student.name}</div>
+        {[
+          ["Class", student.class],
+          ["DOB", student.dob || "—"],
+          ["Father", student.father_name || student.father || "—"],
+          ["Mother", student.mother_name || student.mother || "—"],
+          ["Phone", student.phone],
+        ].map(([k, v]) => (
+          <div key={k} style={{ display: "flex", fontSize: 8, marginBottom: 3, gap: 4 }}>
+            <span style={{ color: C.muted, minWidth: 36, fontWeight: 600 }}>{k}:</span>
+            <span style={{ color: C.text, fontWeight: 500 }}>{v}</span>
+          </div>
+        ))}
+      </div>
 
       {/* Footer */}
-      <div style={{ background: C.navy, color: C.white, fontSize: 10, textAlign: "center", padding: "8px 12px" }}>
-        If found, please return to school · 8700656652
+      <div style={{ background: C.navy, color: C.white, fontSize: 7, textAlign: "center", padding: "5px 8px" }}>
+        If found please return to school · 8700656652
       </div>
     </div>
   );
@@ -77,31 +73,15 @@ function IDCardTemplate({ student }) {
 export default function IDCardPDF({ student, onClose }) {
   const [downloading, setDownloading] = useState(false);
 
-  const downloadPDF = async () => {
+ const downloadPDF = async () => {
     setDownloading(true);
-    try {
-      const element = document.getElementById("id-card-template");
-      const canvas = await html2canvas(element, { scale: 3, useCORS: true });
-      const imgData = canvas.toDataURL("image/png");
-
-      // Get actual card dimensions in px and convert to mm
-      const pxToMm = 0.264583;
-      const cardWidthMm  = element.offsetWidth  * pxToMm;
-      const cardHeightMm = element.offsetHeight * pxToMm;
-
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: [cardWidthMm, cardHeightMm],
-      });
-
-      pdf.addImage(imgData, "PNG", 0, 0, cardWidthMm, cardHeightMm);
-      pdf.save(`IDCard_${student.name.replace(/ /g, "_")}.pdf`);
-    } catch (e) {
-      alert("Error generating PDF: " + e.message);
-    } finally {
-      setDownloading(false);
-    }
+    const element = document.getElementById("id-card-template");
+    const canvas = await html2canvas(element, { scale: 3 });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [55, 85] });
+    pdf.addImage(imgData, "PNG", 0, 0, 55, 85);
+    pdf.save(`IDCard_${student.name.replace(/ /g, "_")}.pdf`);
+    setDownloading(false);
   };
 
   return (

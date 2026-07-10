@@ -6,7 +6,7 @@ const db      = require('../db/database');
 router.get('/', async (req, res) => {
   try {
     const result = await db.execute(`
-      SELECT f.*, s.name, s.class, s.roll_no, s.phone
+      SELECT f.*, s.name, s.class, s.roll_no, s.phone, s.father_name
       FROM fees f JOIN students s ON f.student_id = s.id
     `);
     res.json(result.rows);
@@ -31,7 +31,7 @@ router.patch('/:studentId/total', async (req, res) => {
 
 // POST collect payment
 router.post('/:studentId/pay', async (req, res) => {
-  const { amount } = req.body;
+  const { amount, month, fee_type } = req.body;
   try {
     const feeResult = await db.execute({
       sql: 'SELECT * FROM fees WHERE student_id=?',
@@ -40,7 +40,7 @@ router.post('/:studentId/pay', async (req, res) => {
     const fee = feeResult.rows[0];
     if (!fee) return res.status(404).json({ error: 'Fee record not found' });
 
-    const newPaid = Math.min(fee.paid_amount + parseFloat(amount), fee.total_fees);
+    const newPaid = Number(fee.paid_amount) + parseFloat(amount);
     const receiptNo = 'LKTS-' + Date.now().toString().slice(-6);
 
     await db.execute({
@@ -48,9 +48,9 @@ router.post('/:studentId/pay', async (req, res) => {
       args: [newPaid, req.params.studentId]
     });
     await db.execute({
-      sql: `INSERT INTO fee_receipts (student_id, receipt_no, amount_paid, paid_on) 
-            VALUES (?, ?, ?, date('now'))`,
-      args: [req.params.studentId, receiptNo, amount]
+      sql: `INSERT INTO fee_receipts (student_id, receipt_no, amount_paid, months, fee_type, paid_on)
+            VALUES (?, ?, ?, ?, ?, date('now'))`,
+      args: [req.params.studentId, receiptNo, amount, month || '', fee_type || 'Tuition Fee']
     });
 
     res.json({ success: true, receipt_no: receiptNo, paid_amount: newPaid });
