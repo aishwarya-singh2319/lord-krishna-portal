@@ -93,8 +93,6 @@ function Modal({ title, onClose, children }) {
     </div>
   );
 }
-
-function Dashboard({ students, fees }) {
   function Dashboard({ students, fees, onClassClick }) {
   const totalStudents = students.length;
   const totalFees = Object.values(fees).reduce((s, f) => s + f.total, 0);
@@ -154,10 +152,11 @@ function Dashboard({ students, fees }) {
 }
 
 function StudentForm({ initial, onSave, onClose }) {
-const [form, setForm] = useState(initial || {
+  const fileRef = useRef(null);
+  const [form, setForm] = useState(initial || {
     name: "", class: CLASSES[0], roll: "", phone: "",
     father: "", mother: "", aadhar: "", pan_number: "",
-    dob: "", caste: "General",
+    dob: "", caste: "General", email: "",
     address: "", photo: null, admitted: new Date().toISOString().slice(0, 10)
   });
 
@@ -186,6 +185,10 @@ const [form, setForm] = useState(initial || {
         <Input label="Roll Number *" value={form.roll} onChange={e => setForm(f => ({ ...f, roll: e.target.value }))} placeholder="V-01" />
         <Input label="Phone *" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="98XXXXXXXX" />
         <Input label="Email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="parent@gmail.com" />
+        <Input label="PAN Number" value={form.pan_number} onChange={e => setForm(f => ({ ...f, pan_number: e.target.value }))} placeholder="Student PAN Number" />
+        <Input label="Aadhar Number" value={form.aadhar} onChange={e => setForm(f => ({ ...f, aadhar: e.target.value }))} placeholder="XXXX XXXX XXXX" />
+        <Input label="Date of Birth" type="date" value={form.dob} onChange={e => setForm(f => ({ ...f, dob: e.target.value }))} />
+        <Select label="Caste" value={form.caste} options={["General","OBC","SC","ST","EWS"]} onChange={e => setForm(f => ({ ...f, caste: e.target.value }))} />
         <Input label="Admission Date" type="date" value={form.admitted} onChange={e => setForm(f => ({ ...f, admitted: e.target.value }))} />
       </div>
       <Input label="Address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="House No., Area, City" />
@@ -222,6 +225,10 @@ function Students({ students, setStudents, fees, setFees }) {
       data.append('phone', form.phone || '0000000000');
       data.append('email', form.email || '');
       data.append('address', form.address || '');
+      data.append('pan_number', form.pan_number || '');
+      data.append('dob', form.dob || '');
+      data.append('aadhar_no', form.aadhar || '');
+      data.append('caste', form.caste || '');
       data.append('admitted_on', form.admitted || new Date().toISOString().slice(0, 10));
       if (form.photo && form.photo.startsWith('data:')) {
         const res = await fetch(form.photo);
@@ -297,7 +304,7 @@ function Students({ students, setStudents, fees, setFees }) {
                 {due > 0 && <div style={{ fontSize: 12, color: C.red, marginTop: 4 }}>Due: {fmt(due)}</div>}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <Btn small variant="outline" onClick={() => setModal({ ...s, roll: s.roll_no || s.roll, phone: s.phone, admitted: s.admitted_on || s.admitted })}>✏️ Edit</Btn>
+                <Btn small variant="outline" onClick={() => setModal({ ...s, roll: s.roll_no || s.roll, phone: s.phone, admitted: s.admitted_on || s.admitted, dob: s.dob || '', caste: s.caste || 'General', email: s.email || '', pan_number: s.pan_number || '', aadhar: s.aadhar_no || s.aadhar || '' })}>✏️ Edit</Btn>
                 <Btn small variant="danger" onClick={() => setConfirmDel(s)}>🗑️</Btn>
               </div>
             </Card>
@@ -330,59 +337,65 @@ function Students({ students, setStudents, fees, setFees }) {
 
 function FeeReceipt({ student, fee, receipt, onClose }) {
   const due = fee.total - fee.paid;
-  const roll = student.roll_no || student.roll || "";
-  const phone = student.phone || "";
   return (
-    <div>
-      <div id="receipt-preview" style={{ border: `2px solid ${C.navy}`, borderRadius: 12, padding: 24, background: C.white }}>
-        <div style={{ textAlign: "center", borderBottom: `3px solid ${C.gold}`, paddingBottom: 16, marginBottom: 16 }}>
-          <div style={{ fontSize: 28 }}>🏫</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: C.navy }}>Lord Krishna The School</div>
-          <div style={{ fontSize: 12, color: C.muted }}>CBSE Affiliated | Ghaziabad, U.P.</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: C.gold, marginTop: 6 }}>FEE RECEIPT</div>
+    <>
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #thermal-receipt, #thermal-receipt * { visibility: visible; }
+          #thermal-receipt {
+            position: fixed; left: 0; top: 0;
+            width: 80mm; margin: 0; padding: 0;
+          }
+        }
+      `}</style>
+      <div id="thermal-receipt" style={{ border: `2px solid ${C.navy}`, borderRadius: 12, padding: 20, background: C.white, maxWidth: 320, margin: "0 auto", fontFamily: "monospace" }}>
+        <div style={{ textAlign: "center", borderBottom: `3px solid ${C.gold}`, paddingBottom: 12, marginBottom: 12 }}>
+          <div style={{ fontSize: 24 }}>🏫</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: C.navy }}>Lord Krishna The School</div>
+          <div style={{ fontSize: 11, color: C.muted }}>CBSE Affiliated | Ghaziabad, U.P.</div>
+          <div style={{ fontSize: 11, color: C.muted }}>📞 8700656652</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.gold, marginTop: 6 }}>FEE RECEIPT</div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 24px", fontSize: 14, marginBottom: 16 }}>
+        <div style={{ fontSize: 12, marginBottom: 12, display: "grid", gap: 4 }}>
           {[
-            ["Receipt No.", receipt.no], ["Date", receipt.date],
-            ["Student Name", student.name], ["Class", student.class],
-            ["Roll No.", roll], ["Phone", phone],
+            ["Receipt No.", receipt.no],
+            ["Date", receipt.date],
+            ["Fee Month", receipt.month],
+            ["Student", student.name],
+            ["Class", student.class],
+            ["Roll No.", student.roll_no || student.roll],
+            ["Father", student.father_name || "—"],
+            ["Phone", student.phone],
           ].map(([k, v]) => (
-            <div key={k} style={{ display: "flex", gap: 6 }}>
-              <span style={{ color: C.muted, minWidth: 100 }}>{k}:</span>
+            <div key={k} style={{ display: "flex", justifyContent: "space-between", borderBottom: `1px dashed ${C.border}`, paddingBottom: 3 }}>
+              <span style={{ color: C.muted }}>{k}:</span>
               <b style={{ color: C.text }}>{v}</b>
             </div>
           ))}
         </div>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, marginBottom: 12 }}>
-          <thead>
-            <tr style={{ background: C.navy, color: C.white }}>
-              {["Description", "Amount"].map(h => <th key={h} style={{ padding: "8px 12px", textAlign: h === "Amount" ? "right" : "left" }}>{h}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-              <td style={{ padding: "8px 12px" }}>Annual School Fees</td>
-              <td style={{ padding: "8px 12px", textAlign: "right" }}>{fmt(fee.total)}</td>
-            </tr>
-            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-              <td style={{ padding: "8px 12px" }}>Amount Paid</td>
-              <td style={{ padding: "8px 12px", textAlign: "right", color: C.green }}>{fmt(receipt.amount)}</td>
-            </tr>
-            <tr style={{ background: due > 0 ? "#fee2e2" : "#dcfce7" }}>
-              <td style={{ padding: "8px 12px", fontWeight: 700 }}>Balance Due</td>
-              <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: due > 0 ? C.red : C.green }}>{fmt(due)}</td>
-            </tr>
-          </tbody>
-        </table>
-        <div style={{ textAlign: "center", fontSize: 12, color: C.muted, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
-          This is a computer generated receipt. | For queries: 8700656652
+        <div style={{ borderTop: `2px solid ${C.navy}`, paddingTop: 10, marginTop: 4 }}>
+          {[
+            ["Total Fees", `₹${fee.total.toLocaleString("en-IN")}`, C.text],
+            ["Amount Paid", `₹${receipt.amount.toLocaleString("en-IN")}`, C.green],
+            ["Balance Due", `₹${due.toLocaleString("en-IN")}`, due > 0 ? C.red : C.green],
+          ].map(([k, v, color]) => (
+            <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
+              <span>{k}</span>
+              <span style={{ color }}>{v}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ textAlign: "center", fontSize: 10, color: C.muted, borderTop: `1px solid ${C.border}`, paddingTop: 10, marginTop: 10 }}>
+          Computer generated receipt<br />
+          Lord Krishna The School · Ghaziabad
         </div>
       </div>
       <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 16 }}>
         <Btn variant="outline" onClick={onClose}>Close</Btn>
-        <Btn variant="green" onClick={() => window.print()}>🖨️ Print Receipt</Btn>
+        <Btn variant="green" onClick={() => window.print()}>🖨️ Print (80mm)</Btn>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -392,6 +405,11 @@ function Fees({ students, fees, setFees }) {
   const [receiptModal, setReceiptModal] = useState(null);
   const [payAmount, setPayAmount] = useState("");
   const [totalInput, setTotalInput] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(
+    new Date().toLocaleString("default", { month: "long" })
+  );
+
+  const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   const [selectedClass, setSelectedClass] = useState(null);
 
   const filtered = students.filter(s =>
@@ -399,15 +417,21 @@ function Fees({ students, fees, setFees }) {
     s.class.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handlePay = (student) => {
+const handlePay = (student) => {
     const amount = parseFloat(payAmount);
     const fee = fees[student.id] || { total: 0, paid: 0 };
     const newPaid = Math.min(fee.paid + amount, fee.total);
-    const receipt = { no: "LKTS-" + Date.now().toString().slice(-6), date: new Date().toLocaleDateString("en-IN"), amount };
+    const receipt = { 
+      no: "LKTS-" + Date.now().toString().slice(-6), 
+      date: new Date().toLocaleDateString("en-IN"), 
+      amount,
+      month: selectedMonth
+    };
     setFees(prev => ({ ...prev, [student.id]: { ...fee, paid: newPaid } }));
     setPayModal(null);
     setReceiptModal({ student, fee: { ...fee, paid: newPaid }, receipt });
     setPayAmount("");
+    setSelectedMonth("January");
   };
 
   const handleSetTotal = (student) => {
@@ -482,7 +506,15 @@ function Fees({ students, fees, setFees }) {
                 <div>Already Paid: <b style={{ color: C.green }}>{fmt((fees[payModal.id] || {}).paid || 0)}</b></div>
                 <div>Balance Due: <b style={{ color: C.red }}>{fmt(((fees[payModal.id] || {}).total || 0) - ((fees[payModal.id] || {}).paid || 0))}</b></div>
               </div>
-              <Input label="Amount to Collect (₹)" type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="e.g. 15000" />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+  <Input label="Amount to Collect (₹)" type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="e.g. 15000" />
+  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <label style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Fee Month</label>
+    <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} style={{ border: `1.5px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", fontSize: 14, background: C.white, fontFamily: "inherit" }}>
+      {MONTHS.map(m => <option key={m}>{m}</option>)}
+    </select>
+  </div>
+</div>
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
                 <Btn variant="outline" onClick={() => { setPayModal(null); setPayAmount(""); }}>Cancel</Btn>
                 <Btn variant="green" onClick={() => parseFloat(payAmount) > 0 && handlePay(payModal)}>✅ Confirm & Generate Receipt</Btn>
@@ -575,7 +607,6 @@ export default function App() {
 
   const renderTab = () => {
     if (loading) return <div style={{ textAlign: "center", padding: 60, color: C.muted, fontSize: 16 }}>⏳ Loading portal data...</div>;
-    if (tab === "dashboard") return <Dashboard students={students} fees={fees} />;
     if (tab === "students")  return <Students students={students} setStudents={setStudents} fees={fees} setFees={setFees} />;
     if (tab === "fees")      return <Fees students={students} fees={fees} setFees={setFees} />;
     if (tab === "idcards")   return <IDCards students={students} />;
@@ -624,4 +655,4 @@ export default function App() {
       </div>
     </div>
   );
-}}
+}
