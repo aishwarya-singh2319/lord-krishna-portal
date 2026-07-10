@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { studentsAPI, feesAPI } from './api';
 import IDCardPDF from './IDCardPDF';
 import Results from './Results';
+import ClassView from './ClassView';
 
 const SEED_STUDENTS = [];
 const SEED_FEES = {};
@@ -94,6 +95,7 @@ function Modal({ title, onClose, children }) {
 }
 
 function Dashboard({ students, fees }) {
+  function Dashboard({ students, fees, onClassClick }) {
   const totalStudents = students.length;
   const totalFees = Object.values(fees).reduce((s, f) => s + f.total, 0);
   const paidFees   = Object.values(fees).reduce((s, f) => s + f.paid,  0);
@@ -137,7 +139,9 @@ function Dashboard({ students, fees }) {
           {[...new Set(students.map(s => s.class))].map(cls => {
             const count = students.filter(s => s.class === cls).length;
             return (
-              <div key={cls} style={{ background: C.bg, borderRadius: 10, padding: "8px 16px", display: "flex", gap: 8, alignItems: "center" }}>
+              <div key={cls} onClick={() => onClassClick(cls)} style={{ background: C.bg, borderRadius: 10, padding: "8px 16px", display: "flex", gap: 8, alignItems: "center", cursor: "pointer", transition: "all 0.2s" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#dbeafe"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = C.bg; e.currentTarget.style.transform = "none"; }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: C.navy }}>{cls}</span>
                 <Badge label={count} color="blue" />
               </div>
@@ -150,8 +154,12 @@ function Dashboard({ students, fees }) {
 }
 
 function StudentForm({ initial, onSave, onClose }) {
-  const [form, setForm] = useState(initial || { name: "", class: CLASSES[0], roll: "", phone: "", email: "", address: "", photo: null, admitted: new Date().toISOString().slice(0, 10) });
-  const fileRef = useRef();
+const [form, setForm] = useState(initial || {
+    name: "", class: CLASSES[0], roll: "", phone: "",
+    father: "", mother: "", aadhar: "", pan_number: "",
+    dob: "", caste: "General",
+    address: "", photo: null, admitted: new Date().toISOString().slice(0, 10)
+  });
 
   const handlePhoto = (e) => {
     const file = e.target.files[0];
@@ -195,6 +203,7 @@ function Students({ students, setStudents, fees, setFees }) {
   const [confirmDel, setConfirmDel] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [selectedClass, setSelectedClass] = useState(null);
 
   const filtered = students.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -383,6 +392,7 @@ function Fees({ students, fees, setFees }) {
   const [receiptModal, setReceiptModal] = useState(null);
   const [payAmount, setPayAmount] = useState("");
   const [totalInput, setTotalInput] = useState("");
+  const [selectedClass, setSelectedClass] = useState(null);
 
   const filtered = students.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -494,6 +504,7 @@ function Fees({ students, fees, setFees }) {
 function IDCards({ students }) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
+  const [selectedClass, setSelectedClass] = useState(null);
 
   const filtered = students.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -546,6 +557,7 @@ export default function App() {
   const [fees, setFees] = useState({});
   const [loading, setLoading] = useState(true);
   const [sideOpen, setSideOpen] = useState(true);
+  const [selectedClass, setSelectedClass] = useState(null);
 
   useEffect(() => {
     Promise.all([studentsAPI.getAll(), feesAPI.getAll()])
@@ -568,6 +580,8 @@ export default function App() {
     if (tab === "fees")      return <Fees students={students} fees={fees} setFees={setFees} />;
     if (tab === "idcards")   return <IDCards students={students} />;
     if (tab === "results")   return <Results students={students} />;
+    if (tab === "dashboard") return <Dashboard students={students} fees={fees} onClassClick={(cls) => { setSelectedClass(cls); setTab("classview"); }} />;
+    if (tab === "classview") return <ClassView className={selectedClass} students={students} setStudents={setStudents} fees={fees} setFees={setFees} onBack={() => setTab("dashboard")} />;
   };
 
   return (
@@ -610,4 +624,4 @@ export default function App() {
       </div>
     </div>
   );
-}
+}}
