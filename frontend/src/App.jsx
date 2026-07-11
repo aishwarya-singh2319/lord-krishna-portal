@@ -386,8 +386,7 @@ function FeeReceipt({ student, feeType, months, amount, receiptNo, onClose }) {
   );
 }
 
-function Fees({ students, fees, setFees }) {
- const FEE_TYPES = ["Tuition Fee", "Exam Fee", "Book Fee"];
+const FEE_TYPES = ["Tuition Fee", "Exam Fee", "Book Fee"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const FEE_KEY_MAP = { "Tuition Fee": "tuition_paid", "Exam Fee": "exam_paid", "Book Fee": "book_paid" };
 
@@ -736,4 +735,4 @@ export default function App() {
       </div>
     </div>
   );
-}}
+}
