@@ -5,15 +5,13 @@ import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-const BACKEND = "https://lkschool.onrender.com";
-
 const C = {
   navy: "#1e3a8a",
   gold: "#d97706",
   white: "#ffffff",
   muted: "#64748b",
   text: "#0f172a",
-  bg: "#f0f4ff",
+  green: "#16a34a",
 };
 
 function IDCardTemplate({ student, uploadedPhoto, onPhotoClick }) {
@@ -29,43 +27,48 @@ function IDCardTemplate({ student, uploadedPhoto, onPhotoClick }) {
       boxSizing: "border-box",
       display: "flex", flexDirection: "column",
     }}>
-      {/* Header - tightened up */}
-      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #2563eb)`, color: C.white, padding: "6px 8px", display: "flex", alignItems: "center", gap: 6 }}>
-        <img src="https://i.ibb.co/jk9t2zpw/logo.png" alt="logo" style={{ width: 24, height: 24, borderRadius: 4, objectFit: "contain", background: "white", flexShrink: 0 }} onError={e => e.target.style.display='none'} />
-        <div style={{ lineHeight: 1.1 }}>
-          <div style={{ fontSize: 8.5, fontWeight: 800 }}>Lord Krishna The School</div>
-          <div style={{ fontSize: 6.2, opacity: .9 }}>MUNSHI HARPAL COLONY</div>
-          <div style={{ fontSize: 6.2, opacity: .9 }}>SHAHPUR BAMHETA (GZB)</div>
+      {/* Header */}
+      <div style={{ background: `linear-gradient(135deg, ${C.navy}, #2563eb)`, color: C.white, padding: "7px 8px", display: "flex", alignItems: "center", gap: 6 }}>
+        <img src="https://i.ibb.co/jk9t2zpw/logo.png" alt="logo" style={{ width: 26, height: 26, borderRadius: 4, objectFit: "contain", background: "white", flexShrink: 0 }} onError={e => e.target.style.display='none'} />
+        <div style={{ lineHeight: 1.15 }}>
+          <div style={{ fontSize: 9, fontWeight: 800 }}>Lord Krishna The School</div>
+          <div style={{ fontSize: 6.3, opacity: .9 }}>MUNSHI HARPAL COLONY</div>
+          <div style={{ fontSize: 6.3, opacity: .9 }}>SHAHPUR BAMHETA (GZB)</div>
         </div>
       </div>
 
       {/* Gold stripe */}
       <div style={{ height: 3, background: `linear-gradient(90deg, ${C.gold}, #fbbf24)` }} />
 
-      {/* Photo - click to upload */}
-      <div style={{ display: "flex", justifyContent: "center", padding: "6px 0 2px" }}>
-        <div onClick={onPhotoClick} style={{ width: 54, height: 54, borderRadius: "50%", background: C.navy, color: C.white, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, border: `2px solid ${C.gold}`, cursor: "pointer", overflow: "hidden" }}>
+      {/* Photo + Class row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "8px 8px 4px" }}>
+        <div onClick={onPhotoClick} style={{ width: 48, height: 56, borderRadius: 4, background: "#f1f5f9", border: `2px solid ${C.gold}`, cursor: "pointer", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           {photoSrc
             ? <img src={photoSrc} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            : (student.name || "?").split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase()
+            : <span style={{ fontSize: 9, color: C.muted, textAlign: "center" }}>Tap to add photo</span>
           }
+        </div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: C.navy, textAlign: "center" }}>
+          Class<br />{student.class}
         </div>
       </div>
 
+      {/* Name banner */}
+      <div style={{ background: "#dcfce7", color: "#15803d", textAlign: "center", fontWeight: 800, fontSize: 11, padding: "4px 6px", margin: "2px 10px" }}>
+        {student.name?.toUpperCase()}
+      </div>
+
       {/* Details */}
-      <div style={{ padding: "0 10px 6px", flex: 1 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: C.navy, textAlign: "center", marginBottom: 5 }}>{student.name}</div>
+      <div style={{ padding: "4px 10px 6px", flex: 1 }}>
         {[
-          ["Class", student.class],
-          ["DOB", student.dob || "—"],
           ["Father", student.father_name || student.father || "—"],
           ["Mother", student.mother_name || student.mother || "—"],
-          ["Phone", student.phone],
-          ["Address", "MUNSHI HARPAL COLONY, SHAHPUR BAMHETA (GZB)"],
+          ["D.O.B", student.dob || "—"],
+          ["Contact No", student.phone || "—"],
+          ["Address", "Munshi Harpal Colony, Shahpur Bamheta (GZB)"],
         ].map(([k, v]) => (
-          <div key={k} style={{ display: "flex", fontSize: 7.5, marginBottom: 2.5, gap: 4 }}>
-            <span style={{ color: C.muted, minWidth: 36, fontWeight: 600, flexShrink: 0 }}>{k}:</span>
-            <span style={{ color: C.text, fontWeight: 500 }}>{v}</span>
+          <div key={k} style={{ fontSize: 8, marginBottom: 3, color: C.text }}>
+            <span style={{ fontWeight: 700 }}>{k}</span> ; {v}
           </div>
         ))}
       </div>
