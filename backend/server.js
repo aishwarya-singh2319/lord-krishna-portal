@@ -13,6 +13,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/students', require('./routes/students'));
 app.use('/api/fees',     require('./routes/fees'));
 app.use('/api/results', require('./routes/results'));
+app.use('/api/classfees', require('./routes/classfees'));
 
 app.get('/', (req, res) => res.json({ message: 'Lord Krishna School API running ✅' }));
 // Users with roles

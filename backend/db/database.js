@@ -10,6 +10,10 @@ await db.execute(`CREATE TABLE IF NOT EXISTS students (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT NOT NULL,
     class       TEXT NOT NULL,
+    fee_type    TEXT NOT NULL,
+    amount      REAL DEFAULT 0,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(class, fee_type)
     roll_no     TEXT NOT NULL UNIQUE,
     phone       TEXT NOT NULL,
     father_name TEXT,

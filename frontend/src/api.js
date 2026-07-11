@@ -16,8 +16,14 @@ export const studentsAPI = {
 };
 
 export const feesAPI = {
-  getAll:     ()              => api.get('/fees'),
-  setTotal:   (id, total)     => api.patch(`/fees/${id}/total`, { total_fees: total }),
-  collectFee: (studentId, amount, month, fee_type) => api.post(`/fees/${studentId}/pay`, { amount, month, fee_type }),
-  getReceipts:(id)            => api.get(`/fees/${id}/receipts`),
+  getAll:      ()          => api.get('/fees'),
+  getSummary:  ()          => api.get('/fees/summary'),
+  setTotal:    (id, total) => api.patch(`/fees/${id}/total`, { total_fees: total }),
+  collectFee:  (studentId, amount, months, fee_type) => api.post(`/fees/${studentId}/pay`, { amount, months, fee_type }),
+  getReceipts: (id)        => api.get(`/fees/${id}/receipts`),
+};
+
+export const classFeesAPI = {
+  getAll: ()               => api.get('/classfees'),
+  setFee: (cls, feeType, amount) => api.post('/classfees', { class: cls, fee_type: feeType, amount }),
 };
