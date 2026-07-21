@@ -93,44 +93,76 @@ function Modal({ title, onClose, children }) {
     </div>
   );
 }
-  function Dashboard({ students, fees, onClassClick }) {
+function Dashboard({ students, onClassClick }) {
+  const [classFeeMap, setClassFeeMap] = useState({});
+  const [studentPaidTotal, setStudentPaidTotal] = useState({});
+  const [loadingFees, setLoadingFees] = useState(true);
+
+  useEffect(() => {
+    feesAPI.getSummary().then(res => {
+      const cfMap = {};
+      res.data.classFees.forEach(row => {
+        if (!cfMap[row.class]) cfMap[row.class] = {};
+        cfMap[row.class][row.fee_type] = row.amount;
+      });
+      const spMap = {};
+      res.data.students.forEach(row => {
+        spMap[row.student_id] = (row.tuition_paid || 0) + (row.exam_paid || 0) + (row.book_paid || 0);
+      });
+      setClassFeeMap(cfMap);
+      setStudentPaidTotal(spMap);
+    }).catch(e => console.error("Dashboard fee summary error:", e))
+      .finally(() => setLoadingFees(false));
+  }, []);
+
+  const classTotal = (cls) => {
+    const cf = classFeeMap[cls] || {};
+    return (cf["Tuition Fee"] || 0) + (cf["Exam Fee"] || 0) + (cf["Book Fee"] || 0);
+  };
+
   const totalStudents = students.length;
-  const totalFees = Object.values(fees).reduce((s, f) => s + f.total, 0);
-  const paidFees   = Object.values(fees).reduce((s, f) => s + f.paid,  0);
-  const dueFees    = totalFees - paidFees;
-  const pending    = students.filter(s => (fees[s.id]?.total || 0) - (fees[s.id]?.paid || 0) > 0).length;
+  const totalFees = students.reduce((sum, s) => sum + classTotal(s.class), 0);
+  const paidFees  = students.reduce((sum, s) => sum + (studentPaidTotal[s.id] || 0), 0);
+  const dueFees   = totalFees - paidFees;
+  const pending   = students.filter(s => classTotal(s.class) - (studentPaidTotal[s.id] || 0) > 0).length;
 
   const stats = [
     { icon: "👨‍🎓", label: "Total Students", value: totalStudents, color: C.navy, sub: "Enrolled" },
     { icon: "💰", label: "Fees Collected",  value: fmt(paidFees),  color: C.green, sub: "This session" },
-    { icon: "⏳", label: "Pending Fees",    value: fmt(dueFees),   color: C.red,   sub: `${pending} students` },
+    { icon: "⏳", label: "Pending Fees",    value: fmt(dueFees > 0 ? dueFees : 0), color: C.red, sub: `${pending} students` },
     { icon: "📊", label: "Collection Rate", value: totalFees > 0 ? Math.round(paidFees / totalFees * 100) + "%" : "0%", color: C.gold, sub: "Of total fees" },
   ];
 
   return (
     <div>
       <h2 style={{ fontSize: 22, color: C.navy, marginBottom: 24, fontWeight: 700 }}>📊 Admin Dashboard</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 18, marginBottom: 32 }}>
-        {stats.map(s => (
-          <Card key={s.label} style={{ borderTop: `4px solid ${s.color}` }}>
-            <div style={{ fontSize: 30, marginBottom: 8 }}>{s.icon}</div>
-            <div style={{ fontSize: 26, fontWeight: 800, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{s.label}</div>
-            <div style={{ fontSize: 12, color: C.muted }}>{s.sub}</div>
+      {loadingFees ? (
+        <div style={{ textAlign: "center", padding: 40, color: C.muted }}>⏳ Loading fee totals...</div>
+      ) : (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 18, marginBottom: 32 }}>
+            {stats.map(s => (
+              <Card key={s.label} style={{ borderTop: `4px solid ${s.color}` }}>
+                <div style={{ fontSize: 30, marginBottom: 8 }}>{s.icon}</div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{s.label}</div>
+                <div style={{ fontSize: 12, color: C.muted }}>{s.sub}</div>
+              </Card>
+            ))}
+          </div>
+          <Card style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: C.navy, marginBottom: 16 }}>Fee Collection Overview</h3>
+            <div style={{ background: "#f1f5f9", borderRadius: 8, height: 18, overflow: "hidden", marginBottom: 8 }}>
+              <div style={{ height: "100%", width: `${totalFees > 0 ? paidFees / totalFees * 100 : 0}%`, background: `linear-gradient(90deg, ${C.navy}, ${C.gold})`, borderRadius: 8, transition: "width .8s" }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.muted }}>
+              <span>Collected: <b style={{ color: C.green }}>{fmt(paidFees)}</b></span>
+              <span>Pending: <b style={{ color: C.red }}>{fmt(dueFees > 0 ? dueFees : 0)}</b></span>
+              <span>Total: <b>{fmt(totalFees)}</b></span>
+            </div>
           </Card>
-        ))}
-      </div>
-      <Card style={{ marginBottom: 24 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: C.navy, marginBottom: 16 }}>Fee Collection Overview</h3>
-        <div style={{ background: "#f1f5f9", borderRadius: 8, height: 18, overflow: "hidden", marginBottom: 8 }}>
-          <div style={{ height: "100%", width: `${totalFees > 0 ? paidFees / totalFees * 100 : 0}%`, background: `linear-gradient(90deg, ${C.navy}, ${C.gold})`, borderRadius: 8, transition: "width .8s" }} />
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.muted }}>
-          <span>Collected: <b style={{ color: C.green }}>{fmt(paidFees)}</b></span>
-          <span>Pending: <b style={{ color: C.red }}>{fmt(dueFees)}</b></span>
-          <span>Total: <b>{fmt(totalFees)}</b></span>
-        </div>
-      </Card>
+        </>
+      )}
       <Card>
         <h3 style={{ fontSize: 16, fontWeight: 700, color: C.navy, marginBottom: 16 }}>Students by Class</h3>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
@@ -392,18 +424,25 @@ const FEE_KEY_MAP = { "Tuition Fee": "tuition_paid", "Exam Fee": "exam_paid", "B
 
 function Fees({ students }) {
   const [search, setSearch] = useState("");
-  const [classFeeMap, setClassFeeMap] = useState({});   // { class: { 'Tuition Fee': amount, ... } }
-  const [studentPaid, setStudentPaid] = useState({});   // { student_id: { tuition_paid, exam_paid, book_paid } }
+  const [classFeeMap, setClassFeeMap] = useState({});
+  const [studentPaid, setStudentPaid] = useState({});
   const [loading, setLoading] = useState(true);
 
-  const [classModal, setClassModal] = useState(null);   // { cls }
+  const [classModal, setClassModal] = useState(null);
   const [classFeeInputs, setClassFeeInputs] = useState({ "Tuition Fee": "", "Exam Fee": "", "Book Fee": "" });
 
-  const [payModal, setPayModal] = useState(null);       // { student, feeType }
+  const [payModal, setPayModal] = useState(null);
   const [payAmount, setPayAmount] = useState("");
   const [selectedMonths, setSelectedMonths] = useState([]);
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [transactionId, setTransactionId] = useState("");
+  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const [receiptModal, setReceiptModal] = useState(null);
+
+  const [historyModal, setHistoryModal] = useState(null); // { student } or "all"
+  const [historyRows, setHistoryRows] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const loadSummary = async () => {
     setLoading(true);
@@ -474,6 +513,9 @@ function Fees({ students }) {
     setPayModal({ student, feeType });
     setPayAmount("");
     setSelectedMonths([]);
+    setPaymentMethod("Cash");
+    setTransactionId("");
+    setPayDate(new Date().toISOString().slice(0, 10));
   };
 
   const confirmPay = async () => {
@@ -481,7 +523,10 @@ function Fees({ students }) {
     if (!amount || amount <= 0) return;
     setSaving(true);
     try {
-      const res = await feesAPI.collectFee(payModal.student.id, amount, selectedMonths.join(","), payModal.feeType);
+      const res = await feesAPI.collectFee(
+        payModal.student.id, amount, selectedMonths.join(","), payModal.feeType,
+        { payment_method: paymentMethod, transaction_id: transactionId, paid_on: payDate }
+      );
       await loadSummary();
       setReceiptModal({
         student: payModal.student,
@@ -491,12 +536,38 @@ function Fees({ students }) {
         receiptNo: res.data.receipt_no,
       });
       setPayModal(null);
-      setPayAmount("");
-      setSelectedMonths([]);
     } catch (e) {
       alert("Error collecting payment: " + (e.response?.data?.error || e.message));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openStudentHistory = async (student) => {
+    setHistoryModal({ student });
+    setHistoryLoading(true);
+    try {
+      const res = await feesAPI.getReceipts(student.id);
+      setHistoryRows(res.data);
+    } catch (e) {
+      console.error(e);
+      setHistoryRows([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const openAllHistory = async () => {
+    setHistoryModal("all");
+    setHistoryLoading(true);
+    try {
+      const res = await feesAPI.getAllReceipts();
+      setHistoryRows(res.data);
+    } catch (e) {
+      console.error(e);
+      setHistoryRows([]);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -506,7 +577,10 @@ function Fees({ students }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
         <h2 style={{ fontSize: 22, color: C.navy, fontWeight: 700, margin: 0 }}>💰 Fee Management</h2>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍  Search student" style={{ border: `1.5px solid ${C.border}`, borderRadius: 8, padding: "8px 14px", fontSize: 14, width: 240, fontFamily: "inherit" }} />
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <Btn variant="outline" onClick={openAllHistory}>📜 Payment History</Btn>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍  Search student" style={{ border: `1.5px solid ${C.border}`, borderRadius: 8, padding: "8px 14px", fontSize: 14, width: 240, fontFamily: "inherit" }} />
+        </div>
       </div>
 
       <Card style={{ marginBottom: 20 }}>
@@ -531,6 +605,7 @@ function Fees({ students }) {
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{s.name}</div>
                   <div style={{ fontSize: 12, color: C.muted }}>{s.class} · Roll {roll}</div>
                 </div>
+                <Btn small variant="outline" onClick={() => openStudentHistory(s)}>📜 History</Btn>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
                 {FEE_TYPES.map(ft => {
@@ -580,9 +655,16 @@ function Fees({ students }) {
       )}
 
       {payModal && (
-        <Modal title={`Collect ${payModal.feeType} — ${payModal.student.name}`} onClose={() => { setPayModal(null); setPayAmount(""); setSelectedMonths([]); }}>
+        <Modal title={`Collect ${payModal.feeType} — ${payModal.student.name}`} onClose={() => setPayModal(null)}>
           <div style={{ display: "grid", gap: 16 }}>
-            <Input label="Amount to Collect (₹)" type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="e.g. 1000" />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <Input label="Amount to Collect (₹)" type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="e.g. 1000" />
+              <Input label="Payment Date" type="date" value={payDate} onChange={e => setPayDate(e.target.value)} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <Select label="Payment Method" value={paymentMethod} options={["Cash", "Online", "Cheque", "UPI", "Bank Transfer"]} onChange={e => setPaymentMethod(e.target.value)} />
+              <Input label="Transaction ID (optional)" value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="e.g. UPI ref no." />
+            </div>
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, color: C.text, display: "block", marginBottom: 8 }}>
                 Month(s) Covered (select 1–12)
@@ -597,7 +679,7 @@ function Fees({ students }) {
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <Btn variant="outline" onClick={() => { setPayModal(null); setPayAmount(""); setSelectedMonths([]); }}>Cancel</Btn>
+              <Btn variant="outline" onClick={() => setPayModal(null)}>Cancel</Btn>
               <Btn variant="green" onClick={confirmPay} style={{ opacity: saving ? .6 : 1 }}>{saving ? "Saving..." : "✅ Confirm & Generate Receipt"}</Btn>
             </div>
           </div>
@@ -607,6 +689,42 @@ function Fees({ students }) {
       {receiptModal && (
         <Modal title="Fee Receipt Generated" onClose={() => setReceiptModal(null)}>
           <FeeReceipt {...receiptModal} onClose={() => setReceiptModal(null)} />
+        </Modal>
+      )}
+
+      {historyModal && (
+        <Modal
+          title={historyModal === "all" ? "📜 All Payment History" : `📜 Payment History — ${historyModal.student.name}`}
+          onClose={() => setHistoryModal(null)}
+        >
+          {historyLoading ? (
+            <div style={{ textAlign: "center", padding: 30, color: C.muted }}>Loading...</div>
+          ) : historyRows.length === 0 ? (
+            <div style={{ textAlign: "center", padding: 30, color: C.muted }}>No payments recorded yet.</div>
+          ) : (
+            <div style={{ display: "grid", gap: 10, maxHeight: 400, overflowY: "auto" }}>
+              {historyRows.map(r => (
+                <div key={r.id} style={{ background: C.bg, borderRadius: 10, padding: 12, fontSize: 13 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, marginBottom: 4 }}>
+                    <span>{r.receipt_no}</span>
+                    <span style={{ color: C.green }}>{fmt(r.amount_paid)}</span>
+                  </div>
+                  {historyModal === "all" && (
+                    <div style={{ color: C.navy, fontSize: 12, marginBottom: 2 }}>{r.name} · {r.class} · Roll {r.roll_no}</div>
+                  )}
+                  <div style={{ color: C.muted, fontSize: 12 }}>
+                    📅 {r.paid_on} &nbsp;·&nbsp; {r.fee_type || "Tuition Fee"} &nbsp;·&nbsp; Month(s): {r.months || "—"}
+                  </div>
+                  <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>
+                    💳 {r.payment_method || "—"} {r.transaction_id ? `· Txn: ${r.transaction_id}` : ""} &nbsp;·&nbsp; <Badge label="Paid" color="green" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+            <Btn variant="outline" onClick={() => setHistoryModal(null)}>Close</Btn>
+          </div>
         </Modal>
       )}
     </div>
@@ -691,7 +809,7 @@ export default function App() {
     if (tab === "fees")      return <Fees students={students} />;
     if (tab === "idcards")   return <IDCards students={students} />;
     if (tab === "results")   return <Results students={students} />;
-    if (tab === "dashboard") return <Dashboard students={students} fees={fees} onClassClick={(cls) => { setSelectedClass(cls); setTab("classview"); }} />;
+    if (tab === "dashboard") return <Dashboard students={students} onClassClick={(cls) => { setSelectedClass(cls); setTab("classview"); }} />;
     if (tab === "classview") return <ClassView className={selectedClass} students={students} setStudents={setStudents} fees={fees} setFees={setFees} onBack={() => setTab("dashboard")} />;
   };
 

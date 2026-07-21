@@ -2,7 +2,6 @@ const express = require('express');
 const router  = express.Router();
 const db      = require('../db/database');
 
-// GET all fees (kept for backward compatibility with old total_fees/paid_amount)
 router.get('/', async (req, res) => {
   try {
     const result = await db.execute(`
@@ -15,7 +14,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET full fee summary: per-student paid totals by fee_type + class fee settings
 router.get('/summary', async (req, res) => {
   try {
     const students = await db.execute(`
@@ -34,7 +32,6 @@ router.get('/summary', async (req, res) => {
   }
 });
 
-// PATCH set total fees (legacy, kept)
 router.patch('/:studentId/total', async (req, res) => {
   const { total_fees } = req.body;
   try {
@@ -48,9 +45,9 @@ router.patch('/:studentId/total', async (req, res) => {
   }
 });
 
-// POST collect payment (now supports months as comma-separated string, e.g. "January,February")
+// POST collect payment — now supports payment_method, transaction_id, and a custom paid_on date (for backfilling historical payments)
 router.post('/:studentId/pay', async (req, res) => {
-  const { amount, months, fee_type } = req.body;
+  const { amount, months, fee_type, payment_method, transaction_id, paid_on } = req.body;
   try {
     const feeResult = await db.execute({
       sql: 'SELECT * FROM fees WHERE student_id=?',
@@ -61,15 +58,16 @@ router.post('/:studentId/pay', async (req, res) => {
 
     const newPaid = Number(fee.paid_amount) + parseFloat(amount);
     const receiptNo = 'LKTS-' + Date.now().toString().slice(-6);
+    const dateToUse = paid_on || new Date().toISOString().slice(0, 10);
 
     await db.execute({
       sql: 'UPDATE fees SET paid_amount=? WHERE student_id=?',
       args: [newPaid, req.params.studentId]
     });
     await db.execute({
-      sql: `INSERT INTO fee_receipts (student_id, receipt_no, amount_paid, months, fee_type, paid_on)
-            VALUES (?, ?, ?, ?, ?, date('now'))`,
-      args: [req.params.studentId, receiptNo, amount, months || '', fee_type || 'Tuition Fee']
+      sql: `INSERT INTO fee_receipts (student_id, receipt_no, amount_paid, months, fee_type, payment_method, transaction_id, paid_on)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [req.params.studentId, receiptNo, amount, months || '', fee_type || 'Tuition Fee', payment_method || '', transaction_id || '', dateToUse]
     });
 
     res.json({ success: true, receipt_no: receiptNo, paid_amount: newPaid });
@@ -78,13 +76,27 @@ router.post('/:studentId/pay', async (req, res) => {
   }
 });
 
-// GET receipts for a student
+// GET receipts for a single student
 router.get('/:studentId/receipts', async (req, res) => {
   try {
     const result = await db.execute({
       sql: `SELECT * FROM fee_receipts WHERE student_id=? ORDER BY created_at DESC`,
       args: [req.params.studentId]
     });
+    res.json(result.rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET all receipts across every student — powers the global Payment History view
+router.get('/receipts/all', async (req, res) => {
+  try {
+    const result = await db.execute(`
+      SELECT r.*, s.name, s.class, s.roll_no
+      FROM fee_receipts r JOIN students s ON r.student_id = s.id
+      ORDER BY r.created_at DESC
+    `);
     res.json(result.rows);
   } catch (e) {
     res.status(500).json({ error: e.message });

@@ -82,6 +82,8 @@ async function initDB() {
     `ALTER TABLE students ADD COLUMN caste TEXT`,
     `ALTER TABLE fee_receipts ADD COLUMN months TEXT`,
     `ALTER TABLE fee_receipts ADD COLUMN fee_type TEXT`,
+    `ALTER TABLE fee_receipts ADD COLUMN payment_method TEXT`,
+    `ALTER TABLE fee_receipts ADD COLUMN transaction_id TEXT`,
   ];
   for (const sql of addCols) {
     try { await db.execute(sql); } catch (e) { /* column already exists */ }
